@@ -15,7 +15,9 @@ router.post('/login', userController.Login);
 router.put('/reset', userController.ResetPassword);
 
 //search filter request
-router.post('/search', userController.searchUser)
+router.post('/search', userController.searchUser);
+
+router.get('/login/verify', userController.verifyUser);
 
 //export router
 module.exports = router;
