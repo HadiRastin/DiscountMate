@@ -1,4 +1,4 @@
-const Item = require('../models/item'); //item model
+const Item = require('../models/item-model');
 
 //gets all items, used in item model
 exports.getAllItems = async (req, res, next) => {
@@ -47,7 +47,7 @@ exports.searchItems = async (req, res, next) => {
 exports.searchItemFilter = async (req, res, next) => {
     try {
         //try and get item by name, could have multiple responses.
-        const [searchItemFilter] = await Item.searchItemFilter(req.body.name);
+        const [searchItemFilter] = await Item.searchItemFilter(req.body.name, req.body.checkWool, req.body.checkCol, req.body.checkAld, req.body.checkSale, req.body.selectCat, req.body.selectSor  );
         res.status(200).json(searchItemFilter);
     }
     catch (err) {
