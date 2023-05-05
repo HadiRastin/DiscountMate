@@ -41,11 +41,6 @@ const SearchItem = () => {
         setIsChecked2(!isChecked2);
     };
 
-    const [isChecked3, setIsChecked3] = useState(false);
-    const handleCheck3 = () => {
-        setIsChecked3(!isChecked3);
-    };
-
     const data = [
         { key: '1', value: 'Food/Drink' },
         { key: '2', value: 'Electrical' },
@@ -61,15 +56,13 @@ const SearchItem = () => {
         { key: '1', value: 'Name A to Z' },
         { key: '2', value: 'Name Z to A' },
         { key: '3', value: 'Price low to high' },
-        { key: '4', value: 'Price high to low' },
-        
-        
+        { key: '4', value: 'Price high to low' },       
     ]
 
     
 
     const getItem = async () => {
-        const postobj = { name: itemName, checkWool: isChecked1, checkCol: isChecked2, checkAld: isChecked3, checkSale: isChecked, selectCat: selectedCat, selectSor: selectedSor }
+        const postobj = { name: itemName, checkWool: isChecked1, checkCol: isChecked2, checkSale: isChecked, selectCat: selectedCat, selectSor: selectedSor }
         await axios.post(`${api}/item/searchFilter`, postobj)
             .then(function (response) {
                 if (response) {
@@ -189,33 +182,21 @@ const SearchItem = () => {
                             </View>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={handleCheck3}>
+                    <TouchableOpacity onPress={handleCheck}>
                         <View style={styles.container}>
 
                             <View style={{ flexDirection: 'row' }}>
 
-                                <View style={[styles.checkbox, isChecked3 && styles.checkboxChecked]} />
-                                <Text style={styles.label}>Aldi</Text>
+                                <View style={[styles.checkboxSale, isChecked && styles.checkboxChecked]} />
+                                <Text style={styles.label}>Sale</Text>
                             </View>
                         </View>
                     </TouchableOpacity>
 
-                        <TouchableOpacity onPress={handleCheck}>
-                            <View style={styles.container}>
-
-                                <View style={{ flexDirection: 'row' }}>
-
-                                    <View style={[styles.checkboxSale, isChecked && styles.checkboxChecked]} />
-                                    <Text style={styles.label}>Sale</Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-
                     </View>
                
             </View>
-
-           
+                       
             
             <View style={styles.container}>
 
@@ -347,7 +328,7 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: 'black',
         marginRight: 10,
-        marginLeft: 50,
+        marginLeft: 130,
     },
     checkboxChecked: {
         backgroundColor: 'green',

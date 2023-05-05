@@ -30,7 +30,7 @@ module.exports = class item {
         return db.execute('SELECT * FROM ITEM WHERE name = ?', [name]);
     }
 
-    static searchItemFilter(name, checkWool, checkCol, checkAld, checkSale, selectCat, selectSor) {
+    static searchItemFilter(name, checkWool, checkCol, checkSale, selectCat, selectSor) {
 
         var isSale = ''
         if (checkSale == true) {
@@ -47,12 +47,6 @@ module.exports = class item {
         if (checkCol == true) {
             coles = ' COMPANY.COM_ID = "2" and'
         }
-
-        var aldi = ''
-        if (checkAld == true) {
-            aldi = ' COMPANY.COM_ID = "3" and'
-        }
-
 
         var cat = ''
         if (selectCat != 0) {
@@ -81,7 +75,6 @@ module.exports = class item {
             cat +
             woolworths +
             coles +
-            aldi +
             isSale +
             ' ITEM_NAME LIKE ?' +
             sort +
