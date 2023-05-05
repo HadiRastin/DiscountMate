@@ -37,15 +37,19 @@ module.exports = class item {
             isSale = ' IP_ITEM_DISCOUNT_PCT != "0" and'
         } 
 
-
         var woolworths = ''
-        if (checkWool == true) {
+        if (checkWool == true && checkCol == false) {
             woolworths = ' COMPANY.COM_ID = "1" and'
         } 
 
         var coles = ''
-        if (checkCol == true) {
+        if (checkCol == true && checkWool == false) {
             coles = ' COMPANY.COM_ID = "2" and'
+        }
+
+        var coles_woolworths = ''
+        if (checkCol == true && checkWool == true) {
+            coles_woolworths = ' (COMPANY.COM_ID = "1" or COMPANY.COM_ID = "2") and'
         }
 
         var cat = ''
@@ -66,7 +70,6 @@ module.exports = class item {
             sort = ' order by IP_FOUR_WK_HIGHEST_PRICE desc'
         }
 
-
         return db.execute('SELECT ITEM.ITEM_NAME, ITEM.ITEM_DESC, ITEM_IMAGE.IMAGE, IP_ITEM_BASE_PRICE, IP_FOUR_WK_HIGHEST_PRICE, IP_ITEM_DISCOUNT_PCT, IP_ITEM_DISCOUNT_PRICE, CATEGORY.CAT_NAME, COMPANY.COM_NAME ' +
             ' FROM ITEM inner join ITEM_PRICE_CURRENT on ITEM.ITEM_ID = ITEM_PRICE_CURRENT.ITEM_ID ' +
             ' left outer join ITEM_IMAGE on ITEM.ITEM_IMAGE_ID = ITEM_IMAGE.ITEM_IMAGE_ID ' +
@@ -75,12 +78,12 @@ module.exports = class item {
             cat +
             woolworths +
             coles +
+            coles_woolworths +
             isSale +
             ' ITEM_NAME LIKE ?' +
             sort +
             ' limit 100 ', ['%' + name + '%']);
-            
-           
+                       
     }
 
     /*static searchItemFilter(categ) {
