@@ -42,6 +42,7 @@ const SearchItem = () => {
     };
 
     const data = [
+        { key: '0', value: 'All' },
         { key: '1', value: 'Food/Drink' },
         { key: '2', value: 'Electrical' },
         { key: '3', value: 'Fruit & Veg' },
@@ -220,9 +221,8 @@ const SearchItem = () => {
                                 setSelectedCat(val)
                             }}
                             data={data}
-                            
-                
                             save="key"
+                            defaultValue={data[1]}
                         />
                    
                         </View>
