@@ -91,71 +91,145 @@ exports.searchUser = async (req, res, next) => {
 
 //log in
 exports.Login = async (req, res, next) => {
-try {
-     //user details
-    username = req.body.username;
-    password = req.body.password;
-     //start db connection
-     db.getConnection ( async (err, connection)=> 
-     {
-         const search_query = mysql.format("Select * from USER where USER_NAME = ?", [username])
-
-         //query db
-         connection.query (search_query, async (err, result) => 
+    try {
+         //user details
+        username = req.body.username;
+        password = req.body.password;
+         //start db connection
+         db.getConnection ( async (err, connection)=> 
          {
-             connection.release()
-             
-             
-             //if (err) throw (err)
-             //if no results
-             if (result.length == 0) 
+             const search_query = mysql.format("Select * from USER where USER_NAME = ?", [username])
+    
+             //query db
+             connection.query (search_query, async (err, result) => 
              {
-                 console.log("-> Username/Password Incorrect")
-                 res.status(404).send("Username/Password Incorrect!");
-             } 
-             else 
-             {
-                 //if there is a result
-                 //const hashedPassword = result[0].password
-                 const hashedPassword = await bcrypt.hash(req.body.password, 10);
-                 //get the hashedPassword from result
-                 if (await bcrypt.compare(password, hashedPassword)) 
+                 connection.release()
+                 
+                 
+                 //if (err) throw (err)
+                 //if no results
+                 if (result.length == 0) 
                  {
-                     //generate access token
-                     console.log("--> Login Successful");
-                     console.log("--> Generating accessToken");
-                     //console.log(result[0].id);
-
-                     //process.env.USERID = result[0].USER_ID;
-                     //process.env.USER = result[0].USER_NAME;
-
-
-
-                     const accessToken =  generateAccessTokens({username: username})
-                     console.log({accessToken: accessToken})
-                     //used for /routes/receipt.js
-                     const data = {
-                         token: accessToken.toString(),
-                         user_id: result[0].USER_ID,
-                         phone: result[0].USER_MOBILE,
-                         email: result[0].USER_EMAIL
-                     }
-                     res.status(200).send(data);
+                     console.log("-> Username/Password Incorrect")
+                     res.status(404).send("Username/Password Incorrect!");
                  } 
                  else 
                  {
-                     console.log("-> Username/Password Incorrect")
-                     res.status(403).send("Username/Password Incorrect!");
+                     //if there is a result
+                     //const hashedPassword = result[0].password
+                     const hashedPassword = await bcrypt.hash(req.body.password, 10);
+                     //get the hashedPassword from result
+                     if (await bcrypt.compare(password, hashedPassword)) 
+                     {
+                         //generate access token
+                         console.log("--> Login Successful");
+                         console.log("--> Generating accessToken");
+                         //console.log(result[0].id);
+    
+                         //process.env.USERID = result[0].USER_ID;
+                         //process.env.USER = result[0].USER_NAME;
+                         console.log("--> Generating OTP");
+                         const otp = Math.floor(1000 + Math.random() * 9000)
+                        
+                        //Send the email to the user
+                         const mailOption = {
+                             from: process.env.AUTH_EMAIL,
+                             to: result[0].USER_EMAIL,
+                             subject: "HERE'S YOUR ONE TIME PASSWORD",
+                             text: "Your one time password is " + otp.toString(),
+                         }
+                         await transporter.sendMail(mailOption);
+
+                         console.log("--> OTP Sent, Awaiting verification");   
+                         //res.status(200).send("OTP sent successfully");
+                        
+                         //Delete all this after frontend are ready
+                          const accessToken =  generateAccessTokens({username: username})
+                          console.log({accessToken: accessToken})
+                          //used for /routes/receipt.js
+                          const data = {
+                              token: accessToken.toString(),
+                              user_id: result[0].USER_ID,
+                              phone: result[0].USER_MOBILE,
+                              email: result[0].USER_EMAIL
+                          }
+                          res.status(200).send(data);
+                         //Until here, keeping it to remain login functionality
+                      } 
+                     else 
+                     {
+                         console.log("-> Username/Password Incorrect")
+                         res.status(403).send("Username/Password Incorrect!");
+                     }
                  }
-             }
+             })
          })
-     })
-} catch (err) {
-    console.log("error:", err);
-    if (!err.statusCode) {
-        err.statusCode = 500;
+    } catch (err) {
+        console.log("error:", err);
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+        }
     }
-    next(err);
+
+
+
+exports.verify = async (req, res, next) => {
+    try {
+
+        const otpHolder = await VerificationSchema.find({
+            OTP : req.body.OTP
+        })
+
+        //query db
+        connection.query (async (err, result) => 
+        {
+            connection.release()
+            
+            
+            //if (err) throw (err)
+            //if no results
+            if (result.length == 0) 
+            {
+                console.log("-> OTP Incorrect")
+                res.status(404).send("OTP Incorrect!");
+            } 
+            else 
+            {
+                const hashedOTP = await bcrypt.hash(VerificationSchema[0].otpHolder, 10);
+                //get the hashedPassword from result
+                if (await bcrypt.compare(otpHolder, hashedOTP)) 
+                {
+                    //generate access token
+                    console.log("--> Login Successful");
+                    console.log("--> Generating accessToken");
+
+                    const accessToken =  generateAccessTokens({username: username})
+                    console.log({accessToken: accessToken})
+                    //used for /routes/receipt.js
+                    const data = {
+                        token: accessToken.toString(),
+                        user_id: result[0].USER_ID,
+                        phone: result[0].USER_MOBILE,
+                        email: result[0].USER_EMAIL
+                    }
+                    res.status(200).send(data);
+                } 
+                else 
+                {
+                    console.log("-> OTP Incorrect")
+                    res.status(403).send("OTP Incorrect!");
+                }
+            }
+        })
+
+    } catch (err) {
+        console.log("error:", err);
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
     }
 }
 
