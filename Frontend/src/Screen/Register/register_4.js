@@ -30,15 +30,15 @@ const Register4 = () =>{
             return;
         }
 
+        //postcode and searchradius are HARDCODED here
+        //regdate doesn't exist here
         const postobj = {
             username:username,
             password:repwd,
             email:email,
             mobile:phone,
-            permission:'0',
             postcode:'2020',
-            searchradius:'200',
-            active:'1'
+            searchradius:'200'
         }
 
         await axios.post(`${api}/user/create`,postobj)

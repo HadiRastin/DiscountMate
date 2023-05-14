@@ -8,7 +8,7 @@ import { SelectList } from 'react-native-dropdown-select-list'
 const History = () =>{
     const [itemList, setItemList] = useState();
     const [listValue, SetListValue] = useState("");
-    const userid = useSelector(state => state.app.userid);
+    const token = useSelector(state => state.app.token);
 
     useEffect(() => {getItem()},[!itemList])
 
@@ -28,8 +28,9 @@ const History = () =>{
                 return;
         }
 
-        const postobj = { dateVal: currentDate, userid: userid }
-        await axios.post(`${api}/item/searchInvoiceHistory`, postobj)
+        const headers = { 'Authorization': 'Bearer ' + token }
+        const postobj = { dateVal: currentDate }
+        await axios.post(`${api}/item/searchInvoiceHistory`, postobj, { headers: headers })
             .then(function (response) {
                 if (response) {
                     setItemList(response?.data);

@@ -24,7 +24,7 @@ const Settings = () =>{
                 return <Account />;
             case 'History':
                 return <History />;
-            case 'Settings':
+            case 'Other':
                 return <Other />;
             default:
                 return <Text>Nothing to see here</Text>;
