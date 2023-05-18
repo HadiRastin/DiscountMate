@@ -8,6 +8,7 @@ import api from '../core/Service';
 import RightArrow from '../assets/images/rightarrow.svg';
 
 const Recommended = () => {
+    console.log('I am in the recommended');
     const navigation = useNavigation();
     const userid = useSelector(state => state.app.userid);
     const [itemList, setItemList] = useState();
@@ -26,10 +27,12 @@ const Recommended = () => {
                 console.warn('Get /item/recommended failed.')
             })
     }
+    console.log('ItemList: ', itemList);
 
     const renderItem = ({ item }) => (
         <TouchableOpacity style={styles.item} onPress={() => {
             navigation.navigate('ItemInfo', {
+                id: item.ITEM_ID,
                 name: item.ITEM_NAME,
                 image: item.IMAGE,
                 price: item.IP_FOUR_WK_HIGHEST_PRICE,

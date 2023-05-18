@@ -25,6 +25,7 @@ import ResetPwd from './Screen/ResetPwd';
 import ReceiptResult from './Screen/receiptResult';
 import ItemInfo from './Screen/ItemInfo';
 import SearchItem from './Screen/SearchItem';
+import PriceHistory from './Screen/PriceHistory';
 //import FilterItem from './Screen/FilterItem';
 //import Drawer fom './components/drawer';
 
@@ -269,6 +270,22 @@ const Navigation = () => {
                 component={ReceiptResult}
                 options={{ title: 'Scan Result' }}
             />
+            <Stack.Screen
+                name='PriceHistory'
+                component={PriceHistory}
+                options={{
+                    title: 'PriceHistory',
+                    headerLeft: () => (
+                        <TouchableOpacity
+                            style={styles.ProflieIcon}
+                            onPress={() => navigation.goBack()}>
+                            <LeftArrow />
+                        </TouchableOpacity>
+                    )
+                }}
+            />
+            
+            
         </Stack.Navigator>
     );
 }

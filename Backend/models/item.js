@@ -22,7 +22,15 @@ module.exports = class item {
     }*/
 
     static getRecommended(id) {
+        console.log("I am hereeeeee in recommend script");
         return db.execute('SELECT i.ITEM_ID,i.ITEM_NAME,i.ITEM_DESC,pcr.IP_FOUR_WK_HIGHEST_PRICE,pcr.IP_ITEM_BASE_PRICE,pcr.IP_ITEM_DISCOUNT_PCT,cat.CAT_NAME,c.COM_NAME,im.IMAGE from RECOMMEND_ITEM r inner join ITEM i on r.ITEM_ID = i.ITEM_ID inner join ITEM_PRICE_CURRENT pcr on pcr.ITEM_ID = i.ITEM_ID inner join CATEGORY cat on i.CAT_ID = cat.CAT_ID inner join COMPANY c on r.COM_ID = c.COM_ID inner join ITEM_IMAGE im on i.ITEM_IMAGE_ID = im.ITEM_IMAGE_ID where r.USER_ID = ? ORDER BY IP_ITEM_DISCOUNT_PCT DESC limit 0,10', [id]);
+    }
+
+   
+
+    static searchItemHistory(id) {
+        console.log("I am hereeeeee in history script: " + id);
+        return db.execute('SELECT i.ITEM_ID,i.IPH_DATE,i.IPH_ITEM_DISCOUNT_PRICE,i.IPH_ITEM_BASE_PRICE,i.COM_ID  from ITEM_PRICE_HIST i where i.ITEM_ID = ? ORDER BY IPH_DATE ASC limit 0,10', [id]);
     }
 
     //search for items by name
@@ -31,7 +39,8 @@ module.exports = class item {
     }
 
     static searchItemFilter(name, checkWool, checkCol, checkSale, selectCat, selectSor) {
-        return db.execute('SELECT ITEM.ITEM_NAME, ITEM.ITEM_DESC, ITEM_IMAGE.IMAGE, IP_ITEM_BASE_PRICE, IP_FOUR_WK_HIGHEST_PRICE, IP_ITEM_DISCOUNT_PCT, IP_ITEM_DISCOUNT_PRICE, CATEGORY.CAT_NAME, COMPANY.COM_NAME ' +
+        console.log("I am hereeeeee in search script");
+        return db.execute('SELECT ITEM.ITEM_ID, ITEM.ITEM_NAME, ITEM.ITEM_DESC, ITEM_IMAGE.IMAGE, IP_ITEM_BASE_PRICE, IP_FOUR_WK_HIGHEST_PRICE, IP_ITEM_DISCOUNT_PCT, IP_ITEM_DISCOUNT_PRICE, CATEGORY.CAT_NAME, COMPANY.COM_NAME ' +
             ' FROM ITEM inner join ITEM_PRICE_CURRENT on ITEM.ITEM_ID = ITEM_PRICE_CURRENT.ITEM_ID ' +
             ' left outer join ITEM_IMAGE on ITEM.ITEM_IMAGE_ID = ITEM_IMAGE.ITEM_IMAGE_ID ' +
             ' inner join CATEGORY on ITEM.CAT_ID = CATEGORY.CAT_ID' +

@@ -74,10 +74,15 @@ const SearchItem = () => {
                 console.warn("ERROR: " + error);
             })
     }
+    console.log('ItemListttttttSearch: ', itemList);
+
+   
 
     const renderItem = ({ item }) => (
         <TouchableOpacity style={styles.item} onPress={() => {
+            console.log('Item IDDDD in item searchhhhh: ', item.ITEM_ID);
             navigation.navigate('ItemInfo', {
+                id: item.ITEM_ID,
                 name: item.ITEM_NAME,
                 image: item.IMAGE,
                 price: item.IP_FOUR_WK_HIGHEST_PRICE,
@@ -99,6 +104,7 @@ const SearchItem = () => {
             </View>
         </TouchableOpacity>
     );
+    
 
     return (
         <View>

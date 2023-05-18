@@ -1,10 +1,16 @@
 import { useRoute } from '@react-navigation/native';
 import React from 'react';
-import { SafeAreaView, Text, StyleSheet, View, Image } from 'react-native';
+import { SafeAreaView, Text, StyleSheet, View, Image, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const ItemInfo = () => {
+    const navigation = useNavigation();
     const route = useRoute();
-    const { name, image, price, discount, percent, catagory, company, description } = route.params;
+    const { id, name, image, price, discount, percent, catagory, company, description } = route.params;
+
+    console.log('Item IDDDD in item infoooo: ', id);
+
+  
 
     return (
         <SafeAreaView>
@@ -27,7 +33,16 @@ const ItemInfo = () => {
                     </View>
                 </View>
             </View>
+
+            <View>
+                <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('PriceHistory', {id : id})}>
+                    <Text style={styles.btn_text}>View Historical Price</Text>
+               </TouchableOpacity>
+            </View>
+
         </SafeAreaView>
+
+        
     )
 }
 
@@ -74,7 +89,23 @@ const styles = StyleSheet.create({
     },
     item_catcom: {
         fontSize: 16
-    }
+    },
+    btn: {
+        backgroundColor: '#4F44D0',
+        width: '40%',
+        height: 40,
+        borderRadius: 0,
+        borderBottomLeftRadius: 0,
+        borderTopLeftRadius: 0,
+        marginTop: 30,
+        marginLeft: 40
+    },
+    btn_text: {
+        fontSize: 14,
+        color: 'white',
+        margin: 5,
+        marginLeft: 8
+    },
 })
 
 export default ItemInfo;
