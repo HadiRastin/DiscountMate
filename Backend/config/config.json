@@ -1,8 +1,0 @@
-{
-  "connectionLimit": 100,
-  "host": "34.129.54.95",
-  "port": "3306",
-  "user": "matthew",
-  "database": "dcmdb",
-  "password": "p@ssword0502"
-}
