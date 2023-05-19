@@ -1,8 +1,13 @@
 const User = require('../models/user-model'); //user model
 const mysql = require('mysql2'); //used for mysql calls
 const config = require('../config/config.json'); //used to get db details
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken'); //used to generate login tokens
+const bcrypt = require('bcrypt'); //used to hash and salt passwords
+
+require("dotenv").config();
+const nodemailer = require('nodemailer');
+const VerificationSchema = require('../models/authentication');
+const client = require('twilio')(process.env.ACC_SID, process.env.AUTH_TOKEN);
 
 //create mysql pool to connect to MySQL db
 const db = mysql.createPool({
@@ -13,6 +18,15 @@ const db = mysql.createPool({
     password: config.password,
     database: config.database
 });
+
+let transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth:
+    {
+        user: process.env.AUTH_EMAIL,
+        pass: process.env.AUTH_PASS,
+    }
+})
 
 //create new user
 exports.createUser = async (req, res, next) => {
@@ -31,7 +45,6 @@ exports.createUser = async (req, res, next) => {
                 const mobile = req.body.mobile;
                 const postcode = req.body.postcode;
                 const searchradius = 100; //default search radius (km)
-                const regdate = req.body.regdate; // this could be local variable (get server time)
 
                 //establish connection to db
                 db.getConnection((err, connection) => {
@@ -91,51 +104,110 @@ exports.searchUser = async (req, res, next) => {
 
 //log in
 exports.Login = async (req, res, next) => {
-try {
-    //user details
-    const username = req.body.username;
+    try {
+        const username = req.body.username;
+        db.getConnection(async (err, connection) => {
+            const search_query = mysql.format("Select USER_ID,USER_NAME,USER_MOBILE,USER_EMAIL,USER_PWD_HASH from USER_ENCRYPT where USER_NAME = ?", [username]);
 
-     //start db connection
-     db.getConnection ( async (err, connection)=> 
-     {
-         const search_query = mysql.format("Select USER_ID,USER_NAME,USER_MOBILE,USER_EMAIL,USER_PWD_HASH from USER_ENCRYPT where USER_NAME = ?", [username])
+            //query db
+            connection.query(search_query, async (err, result) => {
+                connection.release()
 
-         //query db
-         connection.query (search_query, async (err, result) => 
-         {
-             connection.release()
+                if (result.length == 0) {
+                    console.log("-> Username/Password Incorrect")
+                    res.status(404).send("Username/Password Incorrect!");
+                }
+                else {
+                    bcrypt.compare(req.body.password, result[0].USER_PWD_HASH).then(match => {
+                        if (match) {
+                            // Generate two factor authentication code
+                            console.log("--> Generating OTP");
+                            const otp = Math.floor(1000 + Math.random() * 9000)
+                            //Send the email to the user
+                            const mailOption = {
+                                from: process.env.AUTH_EMAIL,
+                                to: result[0].USER_EMAIL,
+                                subject: "HERE'S YOUR ONE TIME PASSWORD",
+                                text: "Your one time password is " + otp.toString(),
+                            }
+                            transporter.sendMail(mailOption);
 
-             if (result.length == 0) 
-             {
-                 console.log("-> Username/Password Incorrect")
-                 res.status(404).send("Username/Password Incorrect!");
-             } 
-             else 
-             {
-                 bcrypt.compare(req.body.password, result[0].USER_PWD_HASH).then(match => {
-                     if (match) {
-                         // Create a token that expires in 24 hours
-                         const expiresIn = '24h';
-                         const payload = { sub: result[0].USER_ID };
+                            //console.log("--> OTP Sent to Email, Awaiting verification");
+                            //res.status(200).send("OTP sent successfully");
 
-                         const token = jwt.sign(payload, process.env.PRIVATE_KEY, { expiresIn: expiresIn, algorithm: 'RS256' });
+                            //This is a version that sends OTP via SMS using Twilio
+                            /*client.messages.create({
+                                body: "HERE'S YOUR ONE TIME PASSWORD " + otp.toString(),
+                                to: result[0].USER_MOBILE,
+                                from: "+61333333333" //THIS HAS TO BE A PHONE NUMBER CREATED BY TWILIO
+                            }).then(messages => console.log("--> OTP Sent, Awaiting verification"));
 
-                         console.log("Generated JWT: " + token + " for user: " + username);
+                            console.log("--> OTP Sent to SMS, Awaiting verification");*/
+                            //res.status(200).send("OTP sent successfully");
 
-                         res.status(200).json({ status: 200, token: token, phone: result[0].USER_MOBILE, email: result[0].USER_EMAIL });
-                     } else {
-                         return res.status(401).json({ status: 401, message: "Login Failure: Invalid credentials" });
-                     }
-                 }).catch(err => console.error("error = ", err.message));
-             }
-         })
-     })
-} catch (err) {
-    console.log("error:", err);
-    if (!err.statusCode) {
-        err.statusCode = 500;
+                            // Create a token that expires in 24 hours
+                            const expiresIn = '24h';
+                            const payload = { sub: result[0].USER_ID };
+
+                            const token = jwt.sign(payload, process.env.PRIVATE_KEY, { expiresIn: expiresIn, algorithm: 'RS256' });
+
+                            console.log("Generated JWT: " + token + " for user: " + username);
+
+                            res.status(200).json({ status: 200, token: token, phone: result[0].USER_MOBILE, email: result[0].USER_EMAIL });
+                        } else {
+                            return res.status(401).json({ status: 401, message: "Login Failure: Invalid credentials" });
+                        }
+                    }).catch(err => console.error("error = ", err.message));
+                }
+            })
+        })
+    } catch (err) {
+        console.log("error:", err);
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
     }
-    next(err);
+}
+
+exports.verify = async (req, res, next) => {
+    try {
+        // Mongo model contains no user information, needs modification
+        const otpHolder = await VerificationSchema.find({
+            OTP : req.body.OTP
+        })
+
+        const search_query = mysql.format("Select OTP_CODE from USER_OTP where USER_ID = ?", [req.user_id]);
+        connection.query (search_query, async (err, result) => 
+        {
+            connection.release()
+
+            if (result.length == 0) 
+            {
+                console.log("-> OTP Incorrect")
+                res.status(404).send("OTP Incorrect!");
+            } 
+            else 
+            {
+                const hashedOTP = await bcrypt.hash(VerificationSchema[0].otpHolder, 10);
+                //get the hashedPassword from result
+                if (await bcrypt.compare(otpHolder, hashedOTP)) 
+                {
+                    // Generate token
+                } 
+                else 
+                {
+                    console.log("-> OTP Incorrect")
+                    res.status(403).send("OTP Incorrect!");
+                }
+            }
+        })
+    } catch (err) {
+        console.log("error:", err);
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
     }
 }
 
@@ -150,8 +222,7 @@ exports.ResetPassword = async (req, res, next) => {
         {
             if (err) throw (err)
             //sql search query
-            const sqlSearch = "Select USER_ID,USER_PWD_HASH,USER_PWD_SALT from USER_ENCRYPT where USER_NAME = ?"
-            const search_query = mysql.format(sqlSearch, [username])
+            const search_query = mysql.format("Select USER_ID,USER_PWD_HASH from USER_ENCRYPT where USER_NAME = ?", [username]);
 
             //query db
             connection.query (search_query, async (err, result) => 
@@ -159,7 +230,7 @@ exports.ResetPassword = async (req, res, next) => {
                 connection.release()
                 
                 if (err) throw (err)
-                //if no results
+
                 if (result.length == 0) 
                 {
                     console.log("-> Username/Password Incorrect")
@@ -167,8 +238,6 @@ exports.ResetPassword = async (req, res, next) => {
                 } 
                 else 
                 {
-                    //if there is a result
-
                     bcrypt.compare(req.body.password, result[0].USER_PWD_HASH).then(match => {
                         if (match) {
                             bcrypt.genSalt(10).then(salt => {
@@ -199,5 +268,5 @@ exports.ResetPassword = async (req, res, next) => {
             err.statusCode = 500;
         }
         next(err);
-        }
+    }
 }
