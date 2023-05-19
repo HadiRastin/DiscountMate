@@ -6,6 +6,15 @@ const errorController = require('./controllers/error-controller'); //error handl
 const mongoose = require('mongoose'); //used to access the MongoDB
 require("dotenv").config(); //used to access the .env file easily
 
+//setup keys
+const fs = require('fs');
+process.env.PRIVATE_KEY = fs.readFileSync('./util/Auth/rsa_private.pem', 'utf8');
+process.env.PUBLIC_KEY = fs.readFileSync('./util/Auth/rsa_public.pem', 'utf8');
+
+//setup passport
+const passport = require('passport');
+require('./util/Auth/passport.js')(passport);
+
 //routes from /routes/
 const shopRoute = require('./routes/shop-route');
 const itemRoute = require('./routes/item-route');
@@ -31,13 +40,40 @@ mongoose.connect(process.env.MONGO_URL,
             console.log('connected to MongoDB')
     });
 
+app.use(express.json());
+app.use((err, req, res, next) => {
+    res.status(400).json({ status: 400, message: "Invalid JSON format" })
+});
+
+// Authenticates supplied token and provides custom error messages
+function authenticateToken(req, res, next) {
+    console.log(req.originalUrl);
+    // Allow login/register attempt as a token has not yet been granted
+    if (req.originalUrl === '/user/login' || req.originalUrl === '/user/create') {
+        next();
+        return;
+    }
+
+    passport.authenticate('jwt', { session: false }, (error, user_id, info) => {
+        if (user_id == false) {
+            if (info.name === "TokenExpiredError") return res.status(400).json({ status: 400, message: "Authentication Failure: Expired token" });
+            if (info.name === "JsonWebTokenError") return res.status(400).json({ status: 400, message: "Authentication Failure: Invalid token" });
+            if (info.name === "Error") return res.status(400).json({ status: 400, message: "Authentication Failure: Missing token" });
+            return res.status(400).json({ status: 400, message: "Authentication Failure: General" });
+        }
+        req.user_id = user_id;
+        console.log("user_id: " + user_id);
+        next();
+    })(req, res);
+}
+
 //endpoints from routes.
-app.use('/shop', shopRoute);
-app.use('/item', itemRoute);
-app.use('/receipt', receiptRoute);
-app.use('/ocr', ocrRoute);
-app.use('/user', userRoute);
-app.use('/view', viewReceiptRoute);
+app.use('/shop', authenticateToken, shopRoute);
+app.use('/item', authenticateToken, itemRoute);
+app.use('/receipt', authenticateToken, receiptRoute);
+app.use('/ocr', authenticateToken, ocrRoute);
+app.use('/user', authenticateToken, userRoute);
+app.use('/view', authenticateToken, viewReceiptRoute);
 
 //Default request (display no error)
 app.use((req, res) => {

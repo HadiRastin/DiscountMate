@@ -1,14 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  Image,
-  TouchableOpacity,
-  ScrollView
-} from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { useSelector } from 'react-redux';
 import ImagePicker from 'react-native-image-crop-picker';
 
 import axios from 'axios';
@@ -18,6 +11,7 @@ import api from '../core/Service';
 const imagelist = []
 const Setting = () => {
     const navigation = useNavigation();
+    const token = useSelector(state => state.app.token);
     const [image, setImage] = useState(null)
 
     useEffect(() => {
@@ -82,13 +76,10 @@ const Setting = () => {
             uri: image.uri,
             type: 'image/jpeg',
             name: 'image.png',
-          });
-        await axios({
-            url:`${api}/receipt`,
-            method:'POST',
-            headers: { 'Content-Type': 'multipart/form-data'},
-            data:bodyFormData
-        })
+        });
+
+        const headers = { 'Content-Type': 'multipart/form-data', 'Authorization': 'Bearer ' + token }
+        await axios.post(`${api}/receipt`, bodyFormData, { headers: headers })
         .then(function (response){
             console.warn('Upload successful')
             setImage('')

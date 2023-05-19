@@ -7,7 +7,7 @@ import api from '../../core/Service';
 
 export function Recommended(){
     const navigation = useNavigation();
-    const userid = useSelector(state => state.app.userid);
+    const token = useSelector(state => state.app.token);
     const [itemList, setItemList] = useState();
 
     // Executes getItem() function on load
@@ -15,8 +15,9 @@ export function Recommended(){
 
     // Retrieve data from API
     const getItem = async () => {
-        const params = { userid: userid };
-        await axios.post(`${api}/item/recommended`, params)
+        //const params = { userid: userid };
+        const headers = { 'Authorization': 'Bearer ' + token }
+        await axios.post(`${api}/item/recommended`, null, { headers: headers })
             .then(function (response) {
                 if (response) {
                     setItemList(response?.data)
