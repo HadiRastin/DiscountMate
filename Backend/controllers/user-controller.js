@@ -20,8 +20,6 @@ exports.createUser = async (req, res, next) => {
         console.log("creating user...");
         //use the following items to create a new user
         const username = req.body.username;
-        //const salt = crypto.randomBytes(32).toString('hex');
-        //const hash = crypto.pbkdf2Sync(req.body.password, salt, 10000, 64, 'sha512').toString('hex');
 
         bcrypt.genSalt(10).then(salt => {
             bcrypt.hash(req.body.password, salt).then(hash => {
