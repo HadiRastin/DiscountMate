@@ -28,16 +28,31 @@ from pytesseract import Output
 from prettytable import PrettyTable
 
 import sys
+import os
+import dustutils
 
 # Sample file out of the dataset
-PyTesLoc = sys.argv[1]
+#PyTesLoc = sys.argv[1]
 FileNameLoc = sys.argv[2]
 UserID = sys.argv[3]
 
 #pytesseract.pytesseract.tesseract_cmd = 'Tesseract-OCR/tesseract.exe'
 # Sample file out of the dataset
 #file_name = '../uploads/wxwg74gj02831.jpg'
-pytesseract.pytesseract.tesseract_cmd = PyTesLoc
+PyTesLoc = distutils.spawn.find_executable("tesseract")
+if (PyTesLoc):
+    pytesseract.pytesseract.tesseract_cmd = PyTesLoc
+else:
+    #Change to your custom install directory
+    pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+
+#Remove output csv to ensure that new results are being utilized/outputted for debugging purposes
+#Ensure csv file is not open while running
+if os.path.isfile('output.csv'):
+  os.remove('output.csv')
+else:
+  print("The output csv does not exist")
+
 file_name = FileNameLoc
 
 img = Image.open(file_name)
