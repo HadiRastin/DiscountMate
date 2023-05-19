@@ -4,6 +4,13 @@ const mysql = require('mysql2'); //used for mysql calls
 const config = require('../config/config.json'); //used to get db details
 const generateAccessTokens = require("../util/generateAccessToken"); //used for login token
 
+require("dotenv").config();
+const nodemailer = require('nodemailer');
+
+const express = require('express');
+const VerificationSchema = require('../models/authentication');
+const client = require('twilio')(process.env.ACC_SID, process.env.AUTH_TOKEN);
+
 //create mysql pool to connect to MySQL db
 const db = mysql.createPool({
     connectionLimit: config.connectionLimit,
@@ -13,6 +20,15 @@ const db = mysql.createPool({
     password: config.password,
     database: config.database
 });
+
+let transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth:
+    {
+        user: process.env.AUTH_EMAIL,
+        pass: process.env.AUTH_PASS,
+    }
+})
 
 //create new user
 exports.createUser = async (req, res, next) => {
@@ -140,8 +156,19 @@ exports.Login = async (req, res, next) => {
                          }
                          await transporter.sendMail(mailOption);
 
-                         console.log("--> OTP Sent, Awaiting verification");   
+                         console.log("--> OTP Sent to Email, Awaiting verification");   
                          //res.status(200).send("OTP sent successfully");
+                         
+                         //This is a version that sends OTP via SMS using Twilio
+                        //  client.messages.create(
+                        //     {
+                        //         body: "HERE'S YOUR ONE TIME PASSWORD " + otp.toString(),
+                        //         to: result[0].USER_MOBILE, 
+                        //         from: "+61333333333" //THIS HAS TO BE A PHONE NUMBER CREATED BY TWILIO
+                        //     }
+                        //  ).then(messages => console.log("--> OTP Sent, Awaiting verification"))
+                        //console.log("--> OTP Sent to SMS, Awaiting verification");   
+                        //res.status(200).send("OTP sent successfully");
                         
                          //Delete all this after frontend are ready
                           const accessToken =  generateAccessTokens({username: username})
