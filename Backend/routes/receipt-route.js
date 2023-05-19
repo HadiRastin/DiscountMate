@@ -1,11 +1,12 @@
 //use express
 const express = require('express');
-const { models } = require('mongoose');
 const router = express.Router();
 var multer = require('multer');
 const upload = multer({dest: './uploads/'}) 
 var receiptModel = require('../models/receipt-model');
 var fs = require('fs');
+const { readdirSync, rmSync } = require('fs');
+const uploadDir = './uploads';
 const path = require('path');
 const mysql = require('mysql2'); //used for mysql calls
 const config = require('../config/config.json'); //used to get db details
@@ -384,7 +385,8 @@ router.post('/', upload.single('image'), (req, res, next) => {
                         //call sql server logic function
                         FillSqLServer();
 
-                        fs.unlinkSync(WriteFilePath)
+                        //cleans up uploads folder to remove all previous images rather than previous
+                        readdirSync(uploadDir).forEach(f => rmSync(`${uploadDir}/${f}`));
                     });
                     //image has been processed by the OCR script
                 } catch (e) {
