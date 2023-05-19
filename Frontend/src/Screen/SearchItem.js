@@ -4,9 +4,11 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, FlatList } 
 import { SelectList } from 'react-native-dropdown-select-list';
 import api from '../core/Service';
 import axios from "axios";
+import { useSelector } from 'react-redux';
 
 const SearchItem = () => {
     const navigation = useNavigation();
+    const token = useSelector(state => state.app.token);
     const [itemList, SetItemList] = useState()
     const [itemName, SetItemName] = useState("");
 
@@ -66,11 +68,10 @@ const SearchItem = () => {
         
     ]
 
-    
-
     const getItem = async () => {
+        const headers = { 'Authorization': 'Bearer ' + token }
         const postobj = { name: itemName, checkWool: isChecked1, checkCol: isChecked2, checkAld: isChecked3, checkSale: isChecked, selectCat: selectedCat, selectSor: selectedSor }
-        await axios.post(`${api}/item/searchFilter`, postobj)
+        await axios.post(`${api}/item/searchFilter`, postobj, { headers: headers })
             .then(function (response) {
                 if (response) {
                     SetItemList(response?.data);

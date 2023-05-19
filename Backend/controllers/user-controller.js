@@ -1,13 +1,11 @@
 const User = require('../models/user-model'); //user model
-const bcrypt = require('bcrypt'); // this package is used for hashing.
 const mysql = require('mysql2'); //used for mysql calls
 const config = require('../config/config.json'); //used to get db details
-const generateAccessTokens = require("../util/generateAccessToken"); //used for login token
+const jwt = require('jsonwebtoken'); //used to generate login tokens
+const bcrypt = require('bcrypt'); //used to hash and salt passwords
 
 require("dotenv").config();
 const nodemailer = require('nodemailer');
-
-const express = require('express');
 const VerificationSchema = require('../models/authentication');
 const client = require('twilio')(process.env.ACC_SID, process.env.AUTH_TOKEN);
 
@@ -35,55 +33,54 @@ exports.createUser = async (req, res, next) => {
     try {
         console.log("creating user...");
         //use the following items to create a new user
-        username = req.body.username;
-        //password = await bcrypt.hash(req.body.password,10); //use bcrypt to encrypt the passwords, can add password salting later for more secure login
-        password = req.body.password;
-        email = req.body.email;
-        mobile = req.body.mobile;
-        postcode = req.body.postcode;
-        //const permission = 0; //admin is 1, user is 0
-        const searchradius = 100; //default search radius (km)
-        //const active = 1; //user is active (1)
-        regdate = req.body.regdate;
+        const username = req.body.username;
 
-        //establish connection to db
-        db.getConnection((err, connection) => 
-        {
-            if (err) throw (err)
+        bcrypt.genSalt(10).then(salt => {
+            bcrypt.hash(req.body.password, salt).then(hash => {
+                console.log(`username: ${req.body.username} , password: ${req.body.password}`)
+                console.log(`salt: ${salt} , hash: ${hash}`);
 
-            //sql search query
-            const sqlSearch = "SELECT * FROM USER WHERE USER_NAME = ?"
-            const search_query = mysql.format(sqlSearch,[username])
+                //should add checks for valid email/mobile formats
+                const email = req.body.email;
+                const mobile = req.body.mobile;
+                const postcode = req.body.postcode;
+                const searchradius = 100; //default search radius (km)
 
-            //sql insert query
-            const sqlInsert = "INSERT INTO USER (USER_NAME, USER_PWD, USER_EMAIL, USER_MOBILE, USER_POSTCODE, USER_SEARCH_RDS, USER_REG_DTTM) VALUES (?,?,?,?,?,?,?)"
-            const insert_query = mysql.format(sqlInsert,[username, password, email, mobile, permission, postcode, searchradius, regdate])
-            //start search query
-            connection.query (search_query, (err, result) => 
-            {
-                if (err) throw (err)
-                console.log("-> Search Results")
-                console.log(result.length)
-                if (result.length != 0) 
-                {
-                    connection.release()
-                    console.log("-> User already exists")
-                    res.status(404).send("User already exists");
-                } 
-                else 
-                {
-                    //if the user doesn't exist, insert new user
-                    connection.query (insert_query, (err, result)=> 
-                    {
-                        connection.release()
+                //establish connection to db
+                db.getConnection((err, connection) => {
+                    if (err) throw (err)
+
+                    //sql search query
+                    const sqlSearch = "SELECT USER_ID FROM USER_ENCRYPT WHERE USER_NAME = ?"
+                    const search_query = mysql.format(sqlSearch, [username])
+
+                    //sql insert query
+                    const sqlInsert = "INSERT INTO USER_ENCRYPT (USER_NAME, USER_PWD_HASH, USER_EMAIL, USER_MOBILE, USER_POSTCODE, USER_SEARCH_RDS) VALUES (?,?,?,?,?,?)";
+                    const insert_query = mysql.format(sqlInsert, [username, hash, email, mobile, postcode, searchradius]);
+                    //start search query
+                    connection.query(search_query, (err, result) => {
                         if (err) throw (err)
-                        console.log ("--> Created new User")
-                        console.log(result.insertId)
-                        res.status(200).send("User created successfully");
+                        console.log("-> Search Results")
+                        console.log(result.length)
+                        if (result.length != 0) {
+                            connection.release()
+                            console.log("-> User already exists")
+                            res.status(404).send("User already exists");
+                        }
+                        else {
+                            //if the user doesn't exist, insert new user
+                            connection.query(insert_query, (err, result) => {
+                                connection.release()
+                                if (err) throw (err)
+                                console.log("--> Created new User")
+                                console.log(result.insertId)
+                                res.status(200).send("User created successfully");
+                            })
+                        }
                     })
-                }
-            })
-        })
+                })
+            });
+        });
     } catch (err) {
         if (!err.statusCode) {
           err.statusCode = 500;
@@ -108,115 +105,83 @@ exports.searchUser = async (req, res, next) => {
 //log in
 exports.Login = async (req, res, next) => {
     try {
-         //user details
-        username = req.body.username;
-        password = req.body.password;
-         //start db connection
-         db.getConnection ( async (err, connection)=> 
-         {
-             const search_query = mysql.format("Select * from USER where USER_NAME = ?", [username])
-    
-             //query db
-             connection.query (search_query, async (err, result) => 
-             {
-                 connection.release()
-                 
-                 
-                 //if (err) throw (err)
-                 //if no results
-                 if (result.length == 0) 
-                 {
-                     console.log("-> Username/Password Incorrect")
-                     res.status(404).send("Username/Password Incorrect!");
-                 } 
-                 else 
-                 {
-                     //if there is a result
-                     //const hashedPassword = result[0].password
-                     const hashedPassword = await bcrypt.hash(req.body.password, 10);
-                     //get the hashedPassword from result
-                     if (await bcrypt.compare(password, hashedPassword)) 
-                     {
-                         //generate access token
-                         console.log("--> Login Successful");
-                         console.log("--> Generating accessToken");
-                         //console.log(result[0].id);
-    
-                         //process.env.USERID = result[0].USER_ID;
-                         //process.env.USER = result[0].USER_NAME;
-                         console.log("--> Generating OTP");
-                         const otp = Math.floor(1000 + Math.random() * 9000)
-                        
-                        //Send the email to the user
-                         const mailOption = {
-                             from: process.env.AUTH_EMAIL,
-                             to: result[0].USER_EMAIL,
-                             subject: "HERE'S YOUR ONE TIME PASSWORD",
-                             text: "Your one time password is " + otp.toString(),
-                         }
-                         await transporter.sendMail(mailOption);
+        const username = req.body.username;
+        db.getConnection(async (err, connection) => {
+            const search_query = mysql.format("Select USER_ID,USER_NAME,USER_MOBILE,USER_EMAIL,USER_PWD_HASH from USER_ENCRYPT where USER_NAME = ?", [username]);
 
-                         console.log("--> OTP Sent to Email, Awaiting verification");   
-                         //res.status(200).send("OTP sent successfully");
-                         
-                         //This is a version that sends OTP via SMS using Twilio
-                        //  client.messages.create(
-                        //     {
-                        //         body: "HERE'S YOUR ONE TIME PASSWORD " + otp.toString(),
-                        //         to: result[0].USER_MOBILE, 
-                        //         from: "+61333333333" //THIS HAS TO BE A PHONE NUMBER CREATED BY TWILIO
-                        //     }
-                        //  ).then(messages => console.log("--> OTP Sent, Awaiting verification"))
-                        //console.log("--> OTP Sent to SMS, Awaiting verification");   
-                        //res.status(200).send("OTP sent successfully");
-                        
-                         //Delete all this after frontend are ready
-                          const accessToken =  generateAccessTokens({username: username})
-                          console.log({accessToken: accessToken})
-                          //used for /routes/receipt.js
-                          const data = {
-                              token: accessToken.toString(),
-                              user_id: result[0].USER_ID,
-                              phone: result[0].USER_MOBILE,
-                              email: result[0].USER_EMAIL
-                          }
-                          res.status(200).send(data);
-                         //Until here, keeping it to remain login functionality
-                      } 
-                     else 
-                     {
-                         console.log("-> Username/Password Incorrect")
-                         res.status(403).send("Username/Password Incorrect!");
-                     }
-                 }
-             })
-         })
+            //query db
+            connection.query(search_query, async (err, result) => {
+                connection.release()
+
+                if (result.length == 0) {
+                    console.log("-> Username/Password Incorrect")
+                    res.status(404).send("Username/Password Incorrect!");
+                }
+                else {
+                    bcrypt.compare(req.body.password, result[0].USER_PWD_HASH).then(match => {
+                        if (match) {
+                            // Generate two factor authentication code
+                            console.log("--> Generating OTP");
+                            const otp = Math.floor(1000 + Math.random() * 9000)
+                            //Send the email to the user
+                            const mailOption = {
+                                from: process.env.AUTH_EMAIL,
+                                to: result[0].USER_EMAIL,
+                                subject: "HERE'S YOUR ONE TIME PASSWORD",
+                                text: "Your one time password is " + otp.toString(),
+                            }
+                            transporter.sendMail(mailOption);
+
+                            //console.log("--> OTP Sent to Email, Awaiting verification");
+                            //res.status(200).send("OTP sent successfully");
+
+                            //This is a version that sends OTP via SMS using Twilio
+                            /*client.messages.create({
+                                body: "HERE'S YOUR ONE TIME PASSWORD " + otp.toString(),
+                                to: result[0].USER_MOBILE,
+                                from: "+61333333333" //THIS HAS TO BE A PHONE NUMBER CREATED BY TWILIO
+                            }).then(messages => console.log("--> OTP Sent, Awaiting verification"));
+
+                            console.log("--> OTP Sent to SMS, Awaiting verification");*/
+                            //res.status(200).send("OTP sent successfully");
+
+                            // Create a token that expires in 24 hours
+                            const expiresIn = '24h';
+                            const payload = { sub: result[0].USER_ID };
+
+                            const token = jwt.sign(payload, process.env.PRIVATE_KEY, { expiresIn: expiresIn, algorithm: 'RS256' });
+
+                            console.log("Generated JWT: " + token + " for user: " + username);
+
+                            res.status(200).json({ status: 200, token: token, phone: result[0].USER_MOBILE, email: result[0].USER_EMAIL });
+                        } else {
+                            return res.status(401).json({ status: 401, message: "Login Failure: Invalid credentials" });
+                        }
+                    }).catch(err => console.error("error = ", err.message));
+                }
+            })
+        })
     } catch (err) {
         console.log("error:", err);
         if (!err.statusCode) {
             err.statusCode = 500;
         }
         next(err);
-        }
     }
-
-
+}
 
 exports.verify = async (req, res, next) => {
     try {
-
+        // Mongo model contains no user information, needs modification
         const otpHolder = await VerificationSchema.find({
             OTP : req.body.OTP
         })
 
-        //query db
-        connection.query (async (err, result) => 
+        const search_query = mysql.format("Select OTP_CODE from USER_OTP where USER_ID = ?", [req.user_id]);
+        connection.query (search_query, async (err, result) => 
         {
             connection.release()
-            
-            
-            //if (err) throw (err)
-            //if no results
+
             if (result.length == 0) 
             {
                 console.log("-> OTP Incorrect")
@@ -228,20 +193,7 @@ exports.verify = async (req, res, next) => {
                 //get the hashedPassword from result
                 if (await bcrypt.compare(otpHolder, hashedOTP)) 
                 {
-                    //generate access token
-                    console.log("--> Login Successful");
-                    console.log("--> Generating accessToken");
-
-                    const accessToken =  generateAccessTokens({username: username})
-                    console.log({accessToken: accessToken})
-                    //used for /routes/receipt.js
-                    const data = {
-                        token: accessToken.toString(),
-                        user_id: result[0].USER_ID,
-                        phone: result[0].USER_MOBILE,
-                        email: result[0].USER_EMAIL
-                    }
-                    res.status(200).send(data);
+                    // Generate token
                 } 
                 else 
                 {
@@ -250,7 +202,6 @@ exports.verify = async (req, res, next) => {
                 }
             }
         })
-
     } catch (err) {
         console.log("error:", err);
         if (!err.statusCode) {
@@ -265,15 +216,13 @@ exports.ResetPassword = async (req, res, next) => {
     try {
         //user details
         username = req.body.username;
-        password = await bcrypt.hash(req.body.password, 10);
-        newpassword = await bcrypt.hash(req.body.newpassword,10);
+
         //start db connection
         db.getConnection ( async (err, connection)=> 
         {
             if (err) throw (err)
             //sql search query
-            const sqlSearch = "Select * from USER where USER_NAME = ?"
-            const search_query = mysql.format(sqlSearch, [username])
+            const search_query = mysql.format("Select USER_ID,USER_PWD_HASH from USER_ENCRYPT where USER_NAME = ?", [username]);
 
             //query db
             connection.query (search_query, async (err, result) => 
@@ -281,7 +230,7 @@ exports.ResetPassword = async (req, res, next) => {
                 connection.release()
                 
                 if (err) throw (err)
-                //if no results
+
                 if (result.length == 0) 
                 {
                     console.log("-> Username/Password Incorrect")
@@ -289,38 +238,27 @@ exports.ResetPassword = async (req, res, next) => {
                 } 
                 else 
                 {
-                    //if there is a result
-                    const hashedPassword = result[0].password
-
-                    //get the hashedPassword from result
-                    if (await bcrypt.compare(password, hashedPassword)) 
-                    {
-                        //generate access token
-                        console.log("--> Password reset")
-                        //return db.execute('UPDATE users SET password = ? WHERE username = ?', [newpassword, username]);
-                        connection.query ('UPDATE USER SET USER_PWD = ? WHERE USER_NAME = ?', [newpassword, username], async (err, result) => 
-                        {
-                            connection.release()
-                            
-                            if (err) throw (err)
-                            //if no results
-                            if (result.length == 0) 
-                            {
-                                console.log("-> Error resetting password")
-                                res.status(404).send("Error resetting password");
-                            } 
-                            else 
-                            {
-                                res.status(200).send("Password reset seccessfully");
-                            }
-                        })
-                    
-                    } 
-                    else 
-                    {
-                        console.log("-> Username/Password Incorrect")
-                        res.status(403).send("Username/Password Incorrect!");
-                    }
+                    bcrypt.compare(req.body.password, result[0].USER_PWD_HASH).then(match => {
+                        if (match) {
+                            bcrypt.genSalt(10).then(salt => {
+                                bcrypt.hash(req.body.newpassword, salt).then(hash => {
+                                    connection.query('UPDATE USER_ENCRYPT SET USER_PWD_HASH = ? WHERE USER_ID = ?', [hash, result[0].USER_ID], async (err, result) => {
+                                        connection.release()
+                                        if (err) throw (err)
+                                        if (result.length == 0) {
+                                            console.log("-> Error resetting password")
+                                            res.status(404).send("Error resetting password");
+                                        }
+                                        else {
+                                            res.status(200).send("Password reset seccessfully");
+                                        }
+                                    })
+                                });
+                            });
+                        } else {
+                            return res.status(401).json({ status: 401, message: "Reset Failure: Invalid credentials" });
+                        }
+                    }).catch(err => console.error("error = ", err.message));
                 }
             })
         })
@@ -330,5 +268,5 @@ exports.ResetPassword = async (req, res, next) => {
             err.statusCode = 500;
         }
         next(err);
-        }
+    }
 }

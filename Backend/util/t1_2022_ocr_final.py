@@ -41,8 +41,9 @@ pytesseract.pytesseract.tesseract_cmd = PyTesLoc
 file_name = FileNameLoc
 
 img = Image.open(file_name)
-img.thumbnail((800,800), Image.ANTIALIAS)
-img
+img.thumbnail((800,800))
+#img.thumbnail((800,800), Image.ANTIALIAS)
+#img
 
 def opencv_resize(image, ratio):
     width = int(image.shape[1] * ratio)

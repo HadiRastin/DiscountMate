@@ -17,9 +17,9 @@ exports.getAllItems = async (req, res, next) => {
 exports.getRecommendedItems = async (req, res, next) => {
     try {
         //try to get all recommended items from model in a json string
-        const [recommendedItems] = await Item.getRecommended(req.body.userid);
+        const [recommendedItems] = await Item.getRecommended(req.user_id);
         res.status(200).json(recommendedItems);
-        console.log("ItemController: getRecommendedItems (OK)");
+        console.log("ItemController: getRecommendedItems for user_id: " + req.user_id + " (OK)");
     } catch (err) {
         if (!err.statusCode) {
             err.statusCode = 500;
@@ -60,7 +60,7 @@ exports.searchItemFilter = async (req, res, next) => {
 exports.searchInvoiceHistory = async (req, res, next) => {
     try {
         //try and get item by name, could have multiple responses. 
-        const [searchInvoiceHistory] = await Item.searchInvoiceHistory(req.body.dateVal, req.body.userid);
+        const [searchInvoiceHistory] = await Item.searchInvoiceHistory(req.body.dateVal, req.user_id);
         res.status(200).json(searchInvoiceHistory);
     }
     catch (err) {
@@ -68,6 +68,8 @@ exports.searchInvoiceHistory = async (req, res, next) => {
         next(err);
     }
 }
+
+// UNUSED BELOW
 
 //adds a new item, used in item model
 exports.postItem = async (req, res, next) => {
