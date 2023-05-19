@@ -12,7 +12,9 @@ const config = require('../config/config.json'); //used to get db details
 require("dotenv").config(); //used to access the .env file easily
 
 //spawn the python process
-const {spawn} = require('child_process');
+//const {spawn} = require('child_process');
+
+// Store user_id globally for additional functions.
 var userID;
 
 
@@ -298,105 +300,80 @@ async function FillSqLServer() {
     */
 }
 
-async function GetUserID()
-{
-    try
-    {
-        var userIDRaw = await db.promise().query("SELECT id FROM users WHERE username = ?", [process.env.user]);
-        //console.log(RawOCRTableDate[0][i]);
-        var s = JSON.stringify(userIDRaw[0][0]); //stringify the raw output
-        GetID = JSON.parse(s).id;
-        console.log("User ID:", GetID);
-        userID = GetID;
-    }
-    catch
-    {
-        console.log("User not logged in! using debug user for inserts");
-        userID = 1;
-    }
+//post request for the uploaded image, using the index.ejs in views for testing purposes at the moment, currently uploads locally to /backend/uploads this also handles MySQL insertion code
+router.post('/', upload.single('image'), (req, res, next) => {
+    try {
+        userID = req.user_id;
+        //object to upload, includes a name and description
+        let date_object = new Date();
+        // get current time
+        let date = ("0" + date_object.getDate()).slice(-2);
+        let month = ("0" + (date_object.getMonth() + 1)).slice(-2);
+        let year = date_object.getFullYear();
+        let hours = date_object.getHours();
+        let minutes = date_object.getMinutes();
+        let seconds = date_object.getSeconds();
 
-}
-
-
-    //post request for the uploaded image, using the index.ejs in views for testing purposes at the moment, currently uploads locally to /backend/uploads this also handles MySQL insertion code
-    router.post('/', upload.single('image'), (req, res, next) => {
         try {
-            GetUserID();
-            //object to upload, includes a name and description
-            let date_object = new Date();
-            // get current time
-            let date = ("0" + date_object.getDate()).slice(-2);
-            let month = ("0" + (date_object.getMonth() + 1)).slice(-2);
-            let year = date_object.getFullYear();
-            let hours = date_object.getHours();
-            let minutes = date_object.getMinutes();
-            let seconds = date_object.getSeconds();
-
-            try {
-                var obj = {
-                    id: year + "-" + month + "-" + date + "/" + hours + ":" + minutes + ":" + seconds,
-                    processed: false,
-                    img: {
-                        //image location
-                        data: fs.readFileSync(path.join(__dirname + '/../uploads/' + req.file.filename)),
-                        contentType: 'image/jpg'
-                    }
+            var obj = {
+                id: year + "-" + month + "-" + date + "/" + hours + ":" + minutes + ":" + seconds,
+                processed: false,
+                img: {
+                    //image location
+                    data: fs.readFileSync(path.join(__dirname + '/../uploads/' + req.file.filename)),
+                    contentType: 'image/jpg'
                 }
-            } catch {
-                console.log("Error creating obj in receipt.js");
-                res.send("Error creating the image object")
             }
+        } catch {
+            console.log("Error creating obj in receipt.js");
+            res.send("Error creating the image object")
+        }
 
-            //Temp image to be processed by the OCR script
-            var Currentdata = obj.img.data.toString("base64");
-            //console.log("DATA", Currentdata)
-            var buf = Buffer.from(Currentdata, 'base64');
-            //file path for temp upload to be processed by the OCR script
-            var WriteFilePath = './uploads/ImageToBeProcessed.jpg'
-            fs.writeFile(WriteFilePath, buf, function (err) {
-                if (err) throw err;
-            });
+        //Temp image to be processed by the OCR script
+        var Currentdata = obj.img.data.toString("base64");
+        //console.log("DATA", Currentdata)
+        var buf = Buffer.from(Currentdata, 'base64');
+        //file path for temp upload to be processed by the OCR script
+        var WriteFilePath = './uploads/ImageToBeProcessed.jpg'
+        fs.writeFile(WriteFilePath, buf, function (err) {
+            if (err) throw err;
+        });
 
-            //create the object with the model
-            receiptModel.create(obj, (err, item) => {
-                if (err) {
-                    console.log(err);
-                    res.status(500).send("Error occurred creating the receipt model:", err.toString());
+        //create the object with the model
+        receiptModel.create(obj, (err, item) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).send("Error occurred creating the receipt model:", err.toString());
+            }
+            else {
+                console.log("Saved receipt locally successfully");
+
+                //send back results to client so they don't have to wait for the MySQL logic to finish to keep using the application
+                res.status(200).send("Receipt saved.. OCR running in background");
+
+                //call ocr script here to use the images saved locally preferably
+
+                //debug line to see what the temp image was saved as.
+                console.log("File name: " + req.file.filename);
+
+                //use pythonshell library to run python with system args
+                const { PythonShell } = require('python-shell');
+
+                let options = {
+                    mode: 'text',
+                    pythonOptions: ['-u'], // get py console output in real time
+                    pythonPath: 'python',
+
+                    //replace this line with your tesseract folder
+                    args: ['C:\Program Files\Tesseract-OCR\tesseract.exe', WriteFilePath, userID]
                 }
-                else {
-                    console.log("Saved receipt locally successfully");
+                console.log('Running OCR Script')
 
-                    //send back results to client so they don't have to wait for the MySQL logic to finish to keep using the application
-                    res.status(200).send("Receipt saved.. OCR running in background");
-
-                    //call ocr script here to use the images saved locally preferably
-
-                    var PathSaved = req.file.filename;
-
-                    //debug line to see what the temp image was saved as.
-                    console.log("File name: " + PathSaved);
-
-                    //use pythonshell library to run python with system args
-
-                    const { PythonShell } = require('python-shell');
-
-                    console.log(err)
-
-
-                    let options = {
-                        mode: 'text',
-                        pythonOptions: ['-u'], // get py console output in real time
-                        pythonPath: 'python',
-
-                        //replace this line with your tesseract folder
-                        args: ['D:\Anaconda\Lib\site-packages\Tesseract-OCR\tesseract.exe', WriteFilePath, userID]
-                    }
-                    console.log('Running OCR Script')
+                try {
                     PythonShell.run('./util/ReceiptOCR.py', options, function (err, results) {
                         if (err) {
                             console.log(err.stack);
                             console.log("Error: " + err);
-                            res.status(500).send("Error processing OCR script");
                         }
                         // results is an array consisting of messages collected during execution, uncomment to see OCR script output in console log
                         console.log('results: %j', results);
@@ -406,24 +383,22 @@ async function GetUserID()
 
                         //call sql server logic function
                         FillSqLServer();
-                        try {
-                            //unlink image once it's been processed
-                            fs.unlinkSync(WriteFilePath)
-                        } catch (err) {
-                            console.error(err)
-                            res.status(500).send("Error removing temp image");
-                        }
+
+                        fs.unlinkSync(WriteFilePath)
                     });
                     //image has been processed by the OCR script
+                } catch (e) {
+                    console.log(e.message);
                 }
-            });
-        } catch (err) {
-            if (!err.statusCode) {
-                err.statusCode = 500;
             }
-            next(err);
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
         }
-    });
+        next(err);
+    }
+});
 
-    //export router
-    module.exports = router;
+//export router
+module.exports = router;

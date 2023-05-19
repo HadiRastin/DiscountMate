@@ -127,6 +127,7 @@ def find_number_of_items_woolies (text):
         return number_of_items
     else:
         print('No match found')
+        return 0
         
 def find_number_of_items_coles (text):
     #search for the number before SUBTOTAL
@@ -137,6 +138,7 @@ def find_number_of_items_coles (text):
         return number_of_items
     else:
         print('No match found')
+        return 0
 
 def sum_of_item_cost(number_of_items, item_costs):
     total =0
@@ -210,7 +212,7 @@ UserID = sys.argv[3]
 # Sample file out of the dataset
 #file_name = '../uploads/ImageToBeProcessed.jpg'
 #pytesseract.pytesseract.tesseract_cmd = PyTesLoc
-pytesseract.pytesseract.tesseract_cmd = r'D:\Anaconda\Lib\site-packages\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 file_name = FileNameLoc
 
 img = Image.open(file_name)
@@ -569,6 +571,3 @@ try:
     df2.to_sql('ocrtable',con=con, if_exists='append',index=False)
 except:
     print("Unable to upload to database")
-
-    
-    

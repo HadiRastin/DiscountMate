@@ -25,7 +25,6 @@ const Login = () => {
             .then(function (response) {
                 dispatch(setAuth(true));
                 dispatch(SetUsername(username));
-                dispatch(SetID(response.data.user_id));
                 dispatch(SetPhoneNum(response.data.phone));
                 dispatch(SetEmail(response.data.email));
                 dispatch(SetToken(response.data.token));
