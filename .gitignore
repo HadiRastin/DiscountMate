@@ -1,6 +1,5 @@
 # ignore log files
 *.log
-Backend/config/config.json
 
 # ignore various IDE and otherwise generated files/directories
 .vs/
