@@ -1,42 +1,36 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TextInput,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity } from 'react-native';
 import axios from 'axios';
-import { SetPhoneNum, SetUsername } from '../../redux/actions/common';
 import api from '../../core/Service';
 
 const Register4 = () =>{
-    const phone = useSelector(state => state.app.mobile)
-    const username = useSelector(state => state.app.username)
+    const email = useSelector(state => state.app.email);
     const navigation = useNavigation();
-    const dispatch = useDispatch();
 
-    const[email, setEmail] = useState('');
-    const[pwd,setpwd] = useState('');
-    const[repwd,setrepwd] = useState('');
+    const [username, setUsername] = useState('');
+    const [pwd,setpwd] = useState('');
+    const [repwd,setrepwd] = useState('');
 
     const infoCheck = async () => {
-        
-        if(!pwdcheck()){
-            console.warn("Register False!");
+
+        if (!usernameCheck()) {
+            console.warn("Register False! - invalid username");
+            return;
+        }
+
+        if(!pwdCheck()) {
+            console.warn("Register False! - password mismatch");
             return;
         }
 
         //postcode and searchradius are HARDCODED here
-        //regdate doesn't exist here
         const postobj = {
             username:username,
             password:repwd,
             email:email,
-            mobile:phone,
+            mobile:'123123',
             postcode:'2020',
             searchradius:'200'
         }
@@ -44,8 +38,6 @@ const Register4 = () =>{
         await axios.post(`${api}/user/create`,postobj)
         .then(function (response) {
                 console.warn("Register success!");
-                dispatch(SetPhoneNum(''))
-                dispatch(SetUsername(''))
                 navigation.navigate('Login');
             })
         .catch(function (error) {
@@ -57,15 +49,24 @@ const Register4 = () =>{
         return 0;
     }
 
-    const pwdcheck = () =>{
+    const usernameCheck = () => {
+        console.log('username: ', username);
+
+        // check things like length, special characters, already exists
+        if (username.length < 3) {
+            return false;
+        }
+        return true;
+    }
+
+    const pwdCheck = () =>{
         console.log('pw: ', pwd);
         console.log('repw:', repwd);
 
         if(pwd != repwd) {
             return false;
         }
-    return true;
-
+        return true;
     }
 
     return(
@@ -83,24 +84,19 @@ const Register4 = () =>{
             <Text style={styles.header_txt}> Welcome to DiscountMate</Text>
             <Text style={styles.header_txt}> Let's get started</Text>
 
-            <View style={{marginTop:5}}>
-                <Text style={{marginLeft:10}}>Email </Text>
-                    <View style={styles.input_box}>
-                        
-                        <TextInput style={{color:'white'}}
-                        onChangeText={setEmail}
-                        />
-                    </View>
-            </View>
-            
+            <View style={{ marginTop: 5 }}>
+                <Text style={{ marginLeft: 10 }}>Username </Text>
+                <View style={styles.input_box}>
+
+                    <TextInput onChangeText={setUsername} />
+                </View>
+            </View>            
 
             <View style={{marginTop:5}}>
                 <Text  style={{marginLeft:10}}>Password</Text>
                     <View style={styles.input_box}>
                         
-                        <TextInput style={{color:'white'}}
-                        onChangeText={setpwd}
-                        />
+                        <TextInput onChangeText={setpwd} />
                     </View>
             </View>
 
@@ -108,9 +104,7 @@ const Register4 = () =>{
                 <Text  style={{marginLeft:10}}>Confirm Password </Text>
                     <View style={styles.input_box}>
                         
-                        <TextInput style={{color:'white'}}
-                        onChangeText={setrepwd}
-                        />
+                        <TextInput onChangeText={setrepwd} />
                     </View>
             </View>
 

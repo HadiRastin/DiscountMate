@@ -2,7 +2,7 @@ const User = require('../models/user-model'); //user model
 const mysql = require('mysql2'); //used for mysql calls
 const config = require('../config/config.json'); //used to get db details
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
 //create mysql pool to connect to MySQL db
 const db = mysql.createPool({
@@ -20,52 +20,56 @@ exports.createUser = async (req, res, next) => {
         console.log("creating user...");
         //use the following items to create a new user
         const username = req.body.username;
-        const salt = crypto.randomBytes(32).toString('hex');
-        const hash = crypto.pbkdf2Sync(req.body.password, salt, 10000, 64, 'sha512').toString('hex');
-        const email = req.body.email;
-        const mobile = req.body.mobile;
-        const postcode = req.body.postcode;
-        const searchradius = 100; //default search radius (km)
-        const regdate = req.body.regdate; // this could be local variable (get server time)
+        //const salt = crypto.randomBytes(32).toString('hex');
+        //const hash = crypto.pbkdf2Sync(req.body.password, salt, 10000, 64, 'sha512').toString('hex');
 
-        //establish connection to db
-        db.getConnection((err, connection) => 
-        {
-            if (err) throw (err)
+        bcrypt.genSalt(10).then(salt => {
+            bcrypt.hash(req.body.password, salt).then(hash => {
+                console.log(`username: ${req.body.username} , password: ${req.body.password}`)
+                console.log(`salt: ${salt} , hash: ${hash}`);
 
-            //sql search query
-            const sqlSearch = "SELECT USER_ID FROM USER_ENCRYPT WHERE USER_NAME = ?"
-            const search_query = mysql.format(sqlSearch,[username])
+                //should add checks for valid email/mobile formats
+                const email = req.body.email;
+                const mobile = req.body.mobile;
+                const postcode = req.body.postcode;
+                const searchradius = 100; //default search radius (km)
+                const regdate = req.body.regdate; // this could be local variable (get server time)
 
-            //sql insert query
-            const sqlInsert = "INSERT INTO USER_ENCRYPT (USER_NAME, USER_PWD_HASH, USER_PWD_SALT, USER_EMAIL, USER_MOBILE, USER_POSTCODE, USER_SEARCH_RDS, USER_REG_DTTM) VALUES (?,?,?,?,?,?,?,?)";
-            const insert_query = mysql.format(sqlInsert, [username, hash, salt, email, mobile, postcode, searchradius, regdate]);
-            //start search query
-            connection.query (search_query, (err, result) => 
-            {
-                if (err) throw (err)
-                console.log("-> Search Results")
-                console.log(result.length)
-                if (result.length != 0) 
-                {
-                    connection.release()
-                    console.log("-> User already exists")
-                    res.status(404).send("User already exists");
-                } 
-                else 
-                {
-                    //if the user doesn't exist, insert new user
-                    connection.query (insert_query, (err, result)=> 
-                    {
-                        connection.release()
+                //establish connection to db
+                db.getConnection((err, connection) => {
+                    if (err) throw (err)
+
+                    //sql search query
+                    const sqlSearch = "SELECT USER_ID FROM USER_ENCRYPT WHERE USER_NAME = ?"
+                    const search_query = mysql.format(sqlSearch, [username])
+
+                    //sql insert query
+                    const sqlInsert = "INSERT INTO USER_ENCRYPT (USER_NAME, USER_PWD_HASH, USER_EMAIL, USER_MOBILE, USER_POSTCODE, USER_SEARCH_RDS) VALUES (?,?,?,?,?,?)";
+                    const insert_query = mysql.format(sqlInsert, [username, hash, email, mobile, postcode, searchradius]);
+                    //start search query
+                    connection.query(search_query, (err, result) => {
                         if (err) throw (err)
-                        console.log ("--> Created new User")
-                        console.log(result.insertId)
-                        res.status(200).send("User created successfully");
+                        console.log("-> Search Results")
+                        console.log(result.length)
+                        if (result.length != 0) {
+                            connection.release()
+                            console.log("-> User already exists")
+                            res.status(404).send("User already exists");
+                        }
+                        else {
+                            //if the user doesn't exist, insert new user
+                            connection.query(insert_query, (err, result) => {
+                                connection.release()
+                                if (err) throw (err)
+                                console.log("--> Created new User")
+                                console.log(result.insertId)
+                                res.status(200).send("User created successfully");
+                            })
+                        }
                     })
-                }
-            })
-        })
+                })
+            });
+        });
     } catch (err) {
         if (!err.statusCode) {
           err.statusCode = 500;
@@ -96,7 +100,7 @@ try {
      //start db connection
      db.getConnection ( async (err, connection)=> 
      {
-         const search_query = mysql.format("Select USER_ID,USER_NAME,USER_MOBILE,USER_EMAIL,USER_PWD_HASH,USER_PWD_SALT from USER_ENCRYPT where USER_NAME = ?", [username])
+         const search_query = mysql.format("Select USER_ID,USER_NAME,USER_MOBILE,USER_EMAIL,USER_PWD_HASH from USER_ENCRYPT where USER_NAME = ?", [username])
 
          //query db
          connection.query (search_query, async (err, result) => 
@@ -110,20 +114,21 @@ try {
              } 
              else 
              {
-                 const hashedPassword = crypto.pbkdf2Sync(req.body.password, result[0].USER_PWD_SALT, 10000, 64, 'sha512').toString('hex');
-                 if (hashedPassword !== result[0].USER_PWD_HASH) return res.status(401).json({ status: 401, message: "Login Failure: Invalid credentials" });
-                 // Token expires in 24 hours
-                 const expiresIn = '24h';
+                 bcrypt.compare(req.body.password, result[0].USER_PWD_HASH).then(match => {
+                     if (match) {
+                         // Create a token that expires in 24 hours
+                         const expiresIn = '24h';
+                         const payload = { sub: result[0].USER_ID };
 
-                 console.log("before create payload");
-                 const payload = { sub: result[0].USER_ID };
-                 console.log("after create payload");
+                         const token = jwt.sign(payload, process.env.PRIVATE_KEY, { expiresIn: expiresIn, algorithm: 'RS256' });
 
-                 const token = jwt.sign(payload, process.env.PRIVATE_KEY, { expiresIn: expiresIn, algorithm: 'RS256' });
+                         console.log("Generated JWT: " + token + " for user: " + username);
 
-                 console.log("Generated JWT: " + token + " for user: " + username);
-
-                 res.status(200).json({ status: 200, token: token, phone: result[0].USER_MOBILE, email: result[0].USER_EMAIL });
+                         res.status(200).json({ status: 200, token: token, phone: result[0].USER_MOBILE, email: result[0].USER_EMAIL });
+                     } else {
+                         return res.status(401).json({ status: 401, message: "Login Failure: Invalid credentials" });
+                     }
+                 }).catch(err => console.error("error = ", err.message));
              }
          })
      })
@@ -165,25 +170,28 @@ exports.ResetPassword = async (req, res, next) => {
                 else 
                 {
                     //if there is a result
-                    const hashedPassword = crypto.pbkdf2Sync(req.body.password, result[0].USER_PWD_SALT, 10000, 64, 'sha512').toString('hex');
-                    if (hashedPassword !== result[0].USER_PWD_HASH) return res.status(401).json({ status: 401, message: "Reset Failure: Invalid credentials" });
 
-                    const new_salt = crypto.randomBytes(32).toString('hex');
-                    const new_hash = crypto.pbkdf2Sync(req.body.newpassword, new_salt, 10000, 64, 'sha512').toString('hex');
-
-                    connection.query('UPDATE USER_ENCRYPT SET USER_PWD_HASH = ?,USER_PWD_SALT = ? WHERE USER_ID = ?', [new_hash, new_salt, result[0].USER_ID], async (err, result) => {
-                        connection.release()
-
-                        if (err) throw (err)
-                        //if no results
-                        if (result.length == 0) {
-                            console.log("-> Error resetting password")
-                            res.status(404).send("Error resetting password");
+                    bcrypt.compare(req.body.password, result[0].USER_PWD_HASH).then(match => {
+                        if (match) {
+                            bcrypt.genSalt(10).then(salt => {
+                                bcrypt.hash(req.body.newpassword, salt).then(hash => {
+                                    connection.query('UPDATE USER_ENCRYPT SET USER_PWD_HASH = ? WHERE USER_ID = ?', [hash, result[0].USER_ID], async (err, result) => {
+                                        connection.release()
+                                        if (err) throw (err)
+                                        if (result.length == 0) {
+                                            console.log("-> Error resetting password")
+                                            res.status(404).send("Error resetting password");
+                                        }
+                                        else {
+                                            res.status(200).send("Password reset seccessfully");
+                                        }
+                                    })
+                                });
+                            });
+                        } else {
+                            return res.status(401).json({ status: 401, message: "Reset Failure: Invalid credentials" });
                         }
-                        else {
-                            res.status(200).send("Password reset seccessfully");
-                        }
-                    })
+                    }).catch(err => console.error("error = ", err.message));
                 }
             })
         })

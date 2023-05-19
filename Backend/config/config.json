@@ -2,7 +2,7 @@
   "connectionLimit": 100,
   "host": "34.129.54.95",
   "port": "3306",
-  "user": "dcmdbuser",
+  "user": "matthew",
   "database": "dcmdb",
-  "password": "dusit2022t3"
+  "password": "p@ssword0502"
 }

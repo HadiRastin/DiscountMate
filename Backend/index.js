@@ -48,8 +48,8 @@ app.use((err, req, res, next) => {
 // Authenticates supplied token and provides custom error messages
 function authenticateToken(req, res, next) {
     console.log(req.originalUrl);
-    // Allow login attempt as a token has not yet been granted
-    if (req.originalUrl === '/user/login') {
+    // Allow login/register attempt as a token has not yet been granted
+    if (req.originalUrl === '/user/login' || req.originalUrl === '/user/create') {
         next();
         return;
     }

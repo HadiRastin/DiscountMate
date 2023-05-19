@@ -1,26 +1,15 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TextInput,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity } from 'react-native';
 
 const Register3 = () =>{
     const navigation = useNavigation();
-
 
     const infoCheck = async () => {
         navigation.navigate('Register4');
         return 0;
     }
-
- 
-
 
     return(
     <SafeAreaView style={styles.container}>

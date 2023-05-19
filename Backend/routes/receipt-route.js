@@ -317,7 +317,10 @@ async function GetUserID()
 //post request for the uploaded image, using the index.ejs in views for testing purposes at the moment, currently uploads locally to /backend/uploads this also handles MySQL insertion code
 router.post('/', upload.single('image'), (req, res, next) => {
     try {
-    GetUserID();
+        console.log("trying to post");
+        //GetUserID();
+        userID = req.user_id;
+        console.log("post successful");
     //object to upload, includes a name and description
     let date_object = new Date();
     // get current time
@@ -386,15 +389,17 @@ router.post('/', upload.single('image'), (req, res, next) => {
             
             PythonShell.run('./util/t1_2022_ocr_final.py', options, function (err, results) {
                 if (err) {
+                    console.log("error here, attempting return after");
                     console.log("Error: " + err);
-                    res.status(500).send("Error processing OCR script");
+                    //res.status(500).send("Error processing OCR script");
+                    return;
                 } 
                 // results is an array consisting of messages collected during execution, uncomment to see OCR script output in console log
                 //console.log('results: %j', results);
                 
                 item.processed = true; //call this after ocr script, debugging for now.
                 item.save();
-
+                console.log("still here?");
                 //call sql server logic function
                 FillSqLServer();
                 try {

@@ -17,7 +17,6 @@ export function Recommended(){
     const getItem = async () => {
         //const params = { userid: userid };
         const headers = { 'Authorization': 'Bearer ' + token }
-        console.log(headers);
         await axios.post(`${api}/item/recommended`, null, { headers: headers })
             .then(function (response) {
                 if (response) {

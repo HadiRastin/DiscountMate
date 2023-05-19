@@ -1,14 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import React from "react";
-import { 
-    View, 
-    Text, 
-    StyleSheet,
-    SafeAreaView,
-    TextInput,
-    TouchableOpacity,
-    FlatList
-} from "react-native";
+import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, FlatList } from "react-native";
 
 const foodlist = [
     {
@@ -73,7 +65,6 @@ const ReceiptResult = () => {
         )
         
     }
-
  
     return (
         <SafeAreaView>
