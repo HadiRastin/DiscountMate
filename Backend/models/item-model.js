@@ -22,7 +22,7 @@ module.exports = class item {
     }
 
     static searchItemHistory(id) {
-        return db.execute('SELECT i.ITEM_ID,i.IPH_DATE,i.IPH_ITEM_DISCOUNT_PRICE,i.IPH_ITEM_BASE_PRICE,i.COM_ID from ITEM_PRICE_HIST i where i.ITEM_ID = ? ORDER BY IPH_DATE ASC limit 0,10', [1240]);
+        return db.execute('SELECT i.ITEM_ID,i.IPH_DATE,i.IPH_ITEM_DISCOUNT_PRICE,i.IPH_ITEM_BASE_PRICE,i.COM_ID from ITEM_PRICE_HIST i where i.ITEM_ID = ? ORDER BY IPH_DATE ASC limit 0,10', [id]);
     }
 
     //search for items by name
