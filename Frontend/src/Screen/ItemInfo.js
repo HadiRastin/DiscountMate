@@ -8,10 +8,6 @@ const ItemInfo = () => {
     const route = useRoute();
     const { id, name, image, price, discount, percent, catagory, company, description } = route.params;
 
-    console.log('Item IDDDD in item infoooo: ', id);
-
-  
-
     return (
         <SafeAreaView>
             <Image style={styles.image_container} source={{ uri: `${image}` }} />
@@ -33,16 +29,12 @@ const ItemInfo = () => {
                     </View>
                 </View>
             </View>
-
             <View>
                 <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('PriceHistory', {id : id})}>
-                    <Text style={styles.btn_text}>View Historical Price</Text>
+                    <Text style={styles.btn_text}>Price History</Text>
                </TouchableOpacity>
             </View>
-
         </SafeAreaView>
-
-        
     )
 }
 
@@ -92,20 +84,21 @@ const styles = StyleSheet.create({
     },
     btn: {
         backgroundColor: '#4F44D0',
-        width: '40%',
-        height: 40,
+        width: '30%',
+        height: 35,
         borderRadius: 0,
         borderBottomLeftRadius: 0,
         borderTopLeftRadius: 0,
         marginTop: 30,
-        marginLeft: 40
+        alignSelf: 'center'
     },
     btn_text: {
-        fontSize: 14,
+        fontSize: 16,
         color: 'white',
         margin: 5,
-        marginLeft: 8
-    },
+        textAlign: 'center',
+        verticalAlign: 'middle'
+    }
 })
 
 export default ItemInfo;

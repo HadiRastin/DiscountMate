@@ -25,11 +25,10 @@ const Login = () => {
             .then(function (response) {
                 dispatch(setAuth(true));
                 dispatch(SetUsername(username));
-                dispatch(SetID(response.data.user_id));
                 dispatch(SetPhoneNum(response.data.phone));
                 dispatch(SetEmail(response.data.email));
                 dispatch(SetToken(response.data.token));
-                navigation.replace('Recommended');
+                navigation.replace('Main');
             })
             .catch(function (error) {
                 console.warn(error);
