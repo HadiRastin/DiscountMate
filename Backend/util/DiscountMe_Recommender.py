@@ -10,8 +10,8 @@ import time
 
 #DB config
 config = {
-    'user': 'dcmdbuser',
-    'password': 'dusit2022t3',
+    'user': 'mohamed',
+    'password': 'p@ssword0503',
     'host': '34.129.54.95',
     'database': 'dcmdb',
     'raise_on_warnings': True
@@ -81,7 +81,7 @@ def reset_recomndation_table():
     # preparing a cursor object
     cursorObject = cnx.cursor()
     # deleting data from the RECOMMEND_ITEM table
-    query = "DELETE FROM RECOMMEND_ITEM"
+    query = "DELETE FROM RECOMMEND_ITEM_TEMP"
     cursorObject.execute(query)
 
     # data deleted
@@ -100,7 +100,7 @@ def insert_user_recommendations_db(attrRows):
     # preparing a cursor object
     cursorObject = cnx.cursor(prepared=True)
     # inserting data into the RECOMMEND_ITEM table
-    query = """INSERT INTO RECOMMEND_ITEM
+    query = """INSERT INTO RECOMMEND_ITEM_TEMP
               VALUES (%s, %s, %s, %s)"""
     for attrValues in attrRows:
         try:
@@ -112,63 +112,32 @@ def insert_user_recommendations_db(attrRows):
     cnx.commit()
     cnx.close()
 
-def callculate_user_recommendations_online_collaborative_filtering(count):
-    """Find user item recommendations and update the db. 
+
+def insert_item_sims_db(attrRows):
+    """Update item sim table.
     Args:
-        count: max number of recommnded items 
-    Returns: None      
+        df: dataframe contains item sim records
+    Returns: None
     """
-    try:
-      # connect to DB and get all transactions 
-      cnx = mysql.connector.connect(**config)
-      df = get_all_transactions_db(cnx)
-      cnx.close()
+    # connect to DB
+    cnx = mysql.connector.connect(**config)
+    # preparing a cursor object
+    cursorObject = cnx.cursor(prepared=True)
+    # inserting data into the RECOMMEND_ITEM table
+    query = """INSERT INTO dcmdb.ITEM_SIM
+              VALUES (%s, %s, %s)"""
+    for attrValues in attrRows:
+        try:
+            cursorObject.execute(query, attrValues)
+        except:
+            pass
 
-      # scale the data 
-      scaler = StandardScaler()      
-      df_scaled = pd.DataFrame(scaler.fit_transform(df[['DPCT', 't_count', 'days']]), index = df.index, columns=['DPCT', 't_count', 'days']) 
-      # Paramters to consider to match items are: 
-      # days: differnce between transaction date and today in number of days.
-      # DPCT: Discount percentage   
-      # t_count: transaction count  
-      # Step 1: compute similarity and create a dataframe 
-      item_sim = cosine_similarity(df_scaled)  
-      df_item_sim = pd.DataFrame(item_sim, index = df['ITEM_ID'], columns=df['ITEM_ID'])  
+    # data inserted
+    cnx.commit()
+    cnx.close()
 
-      # Step 2: find recommndations for users 
-      # get all users 
-      users = df['user_id'].unique()
-      # get transactions per user 
-      df_grouped = df.groupby(['user_id', 'ITEM_ID', 'comp_id']).max()
-      df_grouped.reset_index(inplace = True)
+    
 
-      #delete current recomndations  
-      reset_recomndation_table()
-      #wait for 5 seconds
-      time.sleep(5) # Sleep for 3 seconds
-
-      for user in users:
-        # get items within past month. 
-        user_items = df_grouped[(df_grouped['user_id'] == user) & (df_grouped['days'] > 30) ].sort_values(['t_date'], ascending= False)['ITEM_ID'].unique()
-
-        similiarity_scores = df_item_sim [user_items].mean(axis = 1).sort_values(ascending = False)
-        count = min(len(similiarity_scores), count)
-        similiarity_scores_top_10 = similiarity_scores[:count]
-        attrRows = []
-        for u_item in similiarity_scores_top_10.index:
-            comp_id = df[df['ITEM_ID'] == u_item]['comp_id'].unique()[0]
-            attrRows.append((str(user),str(u_item),str(comp_id))) 
-       
-        # add user recommedned items 
-        insert_user_recommendations_db(attrRows)
-        time.sleep(1) # Sleep for 3 seconds
-    except mysql.connector.Error as err:
-      if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-        print("Something is wrong with your user name or password")
-      elif err.errno == errorcode.ER_BAD_DB_ERROR:
-        print("Database does not exist")
-      else:
-        print(err)  
 
 # work for Content-based filtering approch starts here  
 def get_all_items(cnx):
@@ -208,7 +177,7 @@ def compute_similarity_items(all_items, item_id, item_name):
             df_all_items_similarity_scores: data frame store cosine_similarity with all items   
     """
     df_all_items_similarity_scores = pd.DataFrame(
-        columns=['ITEM_ID', 'ITEM_OTHER', 'SIM'])
+        columns=['ITEM1_ID', 'ITEM2_ID', 'SIM'])
     
     for idx1 in all_items.index:    
         sim = _compute_similarity_two_items(
@@ -234,6 +203,25 @@ def rank_data(df):
     df_ranked = df[['user_id', 'ITEM_ID', 'comp_id', 'num_items', 'rank']]
     return df_ranked
 
+def get_item_sim_scores(cnx, item_id):
+    """Return all item SIM scores from a db. 
+            cnx: database connection.
+        Returns:
+            df: a dataframe contains all transaction and for each:
+            ITEM1_ID: Item ID
+            ITEM2_ID: Item ID
+            SIM: sim score  
+        """
+   
+    # preparing a cursor object
+    cursorObject = cnx.cursor(prepared=True)
+    #select for an item 
+    query =  'SELECT * from dcmdb.ITEM_SIM where ITEM1_ID = ' +  str(item_id)
+    sim_scores = pd.read_sql(sql=query, con=cnx)       
+
+    return sim_scores
+
+
 def callculate_user_recommendations_online_content_based(count):
     """Find user item recommendations based on item names similirities.  
     Args:
@@ -257,6 +245,9 @@ def callculate_user_recommendations_online_content_based(count):
 
       # get all items
       df_all_items = get_all_items(cnx=cnx)
+
+      # read SIM scores
+      df_all_items = get_item_sim_scores(cnx=cnx)
       cnx.close()
 
       #compute similarity between all items and user items
@@ -269,16 +260,29 @@ def callculate_user_recommendations_online_content_based(count):
         #get user items 
         user_items = df_ranked[df_ranked['user_id'] == user_id]['ITEM_ID']
         df_all_items_similarity_scores = pd.DataFrame(
-            columns=['ITEM_ID', 'ITEM_OTHER', 'SIM'])
+            columns=['ITEM1_ID', 'ITEM2_ID', 'SIM'])
         
-        for item_id in user_items:
+        for item_id in user_items: 
             item_name = df_all_items[df_all_items['ITEM_ID']
                                      == item_id]['ITEM_NAME'].values[0]
             #check in sim dict
             if item_id not in similarity_index_dict.keys():
-                #update items similarity scores
-                df_all_items_similarity_scores = pd.concat([df_all_items_similarity_scores, compute_similarity_items(df_all_items, item_id, item_name)])                    
-                similarity_index_dict[item_id] = df_all_items_similarity_scores
+                df_item_similarity_scores = get_item_sim_scores(cnx=cnx, item_id=item_id)
+
+                if len(df_item_similarity_scores == 0):
+                    df_item_similarity_scores = compute_similarity_items(df_all_items, item_id, item_name) 
+                    #update the Db
+                    item_scores_rows = []
+                    for idx in df_item_similarity_scores.index:
+                        item_scores_rows.append([str(df_item_similarity_scores['ITEM1_ID'][idx]),
+                                        str(df_item_similarity_scores['ITEM2_ID'][idx]),
+                                        str(df_item_similarity_scores['SIM'][idx] * 100)])
+                    
+                    insert_item_sims_db(item_scores_rows) 
+
+                df_all_items_similarity_scores = pd.concat([df_all_items_similarity_scores, df_item_similarity_scores])                    
+                similarity_index_dict[item_id] = df_item_similarity_scores
+                    #update the Db          
             else:
                 df_all_items_similarity_scores = pd.concat([df_all_items_similarity_scores,  similarity_index_dict[item_id]]) 
  
@@ -287,12 +291,12 @@ def callculate_user_recommendations_online_content_based(count):
 
         #merge similarity scores with user ranked items
         df_merged = pd.merge(
-            left=user_items, right=df_all_items_similarity_scores, left_on='ITEM_ID', right_on='ITEM_ID')
+            left=user_items, right=df_all_items_similarity_scores, left_on='ITEM_ID', right_on='ITEM1_ID')
         
         # compute score based on rank and sim
         df_merged['SCORE'] = df_merged['rank'] * df_merged['SIM']
         df_user_item_scores = df_merged[[
-            'user_id', 'comp_id', 'ITEM_OTHER', 'SCORE']]
+            'user_id', 'comp_id', 'ITEM2_ID', 'SCORE']]
         df_user_item_scores.columns = [
             'USER_ID', 'COM_ID', 'ITEM_ID', 'SCORE']
         count = min(count, len(df_user_item_scores))
@@ -309,6 +313,8 @@ def callculate_user_recommendations_online_content_based(count):
                             str(df_user_item_top_scores['SCORE'][idx] * 100)])
 
         # add user recommedned items
+        print(attrRows)
+        print()
         insert_user_recommendations_db(attrRows)
         time.sleep(3)  # Sleep for 3 seconds
 
@@ -322,3 +328,7 @@ def callculate_user_recommendations_online_content_based(count):
 
 
 callculate_user_recommendations_online_content_based(10)
+
+# cnx = mysql.connector.connect(**config)
+# sim_scores = get_item_sim_scores(cnx=cnx, item_id=1)
+# print(sim_scores)
