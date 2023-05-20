@@ -14,21 +14,6 @@ const SearchItem = () => {
 
     const [selectedCat, setSelectedCat] = React.useState("");
     const [selectedSor, setSelectedSor] = React.useState("");
-   // const [data, setData] = useState([]);
-
-    // Fetch data from server on component mount
-    /*useEffect(() => {
-        const fetchData = async () => {
-            const result = await axios.get('your-server-url');
-            setData(result.data);
-        };
-        fetchData();
-    }, []);*/
-
-    // Function to handle SelectList selection
-  //  const handleSelectListChange = (val) => {
-  //      setSelected(val);
-  //  }
     
     const [isChecked, setIsChecked] = useState(false);
     const handleCheck = () => {
@@ -70,7 +55,7 @@ const SearchItem = () => {
 
     const getItem = async () => {
         const headers = { 'Authorization': 'Bearer ' + token }
-        const postobj = { name: itemName, checkWool: isChecked1, checkCol: isChecked2, checkAld: isChecked3, checkSale: isChecked, selectCat: selectedCat, selectSor: selectedSor }
+        const postobj = { name: itemName, checkWool: isChecked1, checkCol: isChecked2, checkSale: isChecked, selectCat: selectedCat, selectSor: selectedSor }
         await axios.post(`${api}/item/searchFilter`, postobj, { headers: headers })
             .then(function (response) {
                 if (response) {
@@ -83,11 +68,12 @@ const SearchItem = () => {
     }
 
     const renderItem = ({ item }) => (
-            // If no discount show first display, no styles for discount/ price
-            item.IP_ITEM_DISCOUNT_PCT == '0.00' || item.IP_ITEM_DISCOUNT_PCT == null ?
+        // If no discount show first display, no styles for discount/ price
+        item.IP_ITEM_DISCOUNT_PCT == '0.00' || item.IP_ITEM_DISCOUNT_PCT == null ?
 
             <TouchableOpacity style={styles.item} onPress={() => {
                 navigation.navigate('ItemInfo', {
+                    id: item.ITEM_ID,
                     name: item.ITEM_NAME,
                     image: item.IMAGE,
                     price: item.IP_FOUR_WK_HIGHEST_PRICE,
@@ -98,7 +84,6 @@ const SearchItem = () => {
                     description: item.ITEM_DESC
                 })
             }}>
-
                 <Image style={styles.image_container} source={{ uri: `${item.IMAGE}` }} />
                 <View style={{ width: '100%' }}>
                     <Text style={{ fontWeight: 'bold', width: '80%' }}>{item.ITEM_NAME}</Text>
@@ -111,13 +96,13 @@ const SearchItem = () => {
                         <Text style={{ marginLeft: 50 }}>{item.COM_NAME}</Text>
                     </View>
                 </View>
-
             </TouchableOpacity >
 
             :
             //  else display colour styled discounts and price
             <TouchableOpacity style={styles.item} onPress={() => {
                 navigation.navigate('ItemInfo', {
+                    id: item.ITEM_ID,
                     name: item.ITEM_NAME,
                     image: item.IMAGE,
                     price: item.IP_FOUR_WK_HIGHEST_PRICE,
@@ -132,11 +117,7 @@ const SearchItem = () => {
                 <View style={{ width: '100%' }}>
                     <Text style={{ fontWeight: 'bold', width: '80%' }}>{item.ITEM_NAME}</Text>
                     <View style={{ flexDirection: "row" }}>
-
-
-                        <Text style={{ textDecorationLine: "line-through" }}>
-
-                            ${item.IP_FOUR_WK_HIGHEST_PRICE}</Text>
+                        <Text style={{ textDecorationLine: "line-through" }}>${item.IP_FOUR_WK_HIGHEST_PRICE}</Text>
                         <Text style={{ marginLeft: 5, fontWeight: 'bold', color: 'green' }}>${item.IP_ITEM_BASE_PRICE}</Text>
                         <Text style={{ marginLeft: 5, color: 'red' }}>SAVE {(item.IP_ITEM_DISCOUNT_PCT * 100).toFixed(0)}%</Text>
                     </View>
@@ -146,8 +127,9 @@ const SearchItem = () => {
                     </View>
                 </View>
             </TouchableOpacity>
-            // end if statement for search colour display
+        // end if statement for search colour display
     );
+    
 
     return (
         <View>
@@ -161,70 +143,39 @@ const SearchItem = () => {
                     </View>
                 </TouchableOpacity>
             </View>
-
             <View>
-                
-                    <Text style={styles.title}>Store</Text>
-
-                    <View style={{ flexDirection: 'row' }}>
-
-                        <TouchableOpacity onPress={handleCheck1}>
-                            <View style={styles.container}>
-
-                                <View style={{ flexDirection: 'row' }}>
-
-                                    <View style={[styles.checkbox, isChecked1 && styles.checkboxChecked]} />
-                                    <Text style={styles.label}>Woolworths</Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity onPress={handleCheck2}>
-                            <View style={styles.container}>
-
-                                <View style={{ flexDirection: 'row' }}>
-
-                                    <View style={[styles.checkbox, isChecked2 && styles.checkboxChecked]} />
-                                    <Text style={styles.label}>Coles</Text>
-                                </View>
-                            </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={handleCheck3}>
+                <Text style={styles.title}>Store</Text>
+                <View style={{ flexDirection: 'row' }}>
+                    <TouchableOpacity onPress={handleCheck1}>
                         <View style={styles.container}>
-
                             <View style={{ flexDirection: 'row' }}>
-
-                                <View style={[styles.checkbox, isChecked3 && styles.checkboxChecked]} />
-                                <Text style={styles.label}>Aldi</Text>
+                                <View style={[styles.checkbox, isChecked1 && styles.checkboxChecked]} />
+                                <Text style={styles.label}>Woolworths</Text>
                             </View>
                         </View>
                     </TouchableOpacity>
-
-                        <TouchableOpacity onPress={handleCheck}>
-                            <View style={styles.container}>
-
-                                <View style={{ flexDirection: 'row' }}>
-
-                                    <View style={[styles.checkboxSale, isChecked && styles.checkboxChecked]} />
-                                    <Text style={styles.label}>Sale</Text>
-                                </View>
+                    <TouchableOpacity onPress={handleCheck2}>
+                        <View style={styles.container}>
+                            <View style={{ flexDirection: 'row' }}>
+                                <View style={[styles.checkbox, isChecked2 && styles.checkboxChecked]} />
+                                <Text style={styles.label}>Coles</Text>
                             </View>
-                        </TouchableOpacity>
-
-                    </View>
-               
+                        </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleCheck}>
+                        <View style={styles.container}>
+                            <View style={{ flexDirection: 'row' }}>
+                                <View style={[styles.checkboxSale, isChecked && styles.checkboxChecked]} />
+                                <Text style={styles.label}>Sale</Text>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+                </View>
             </View>
-
-           
-            
             <View style={styles.container}>
-
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-
-                    <Text style={styles.title1}>Category:</Text>
-                        <View style={{ flex: 1 }}>
-
+                    <Text>Category:</Text>
+                    <View style={{ flex: 1 }}>
                         <SelectList
                             dropdownStyles={{
                                 backgroundColor: "white",
@@ -234,48 +185,33 @@ const SearchItem = () => {
                                 width: "90%",
                                 zIndex: 999,
                             }}    
-                    
                             setSelected={(val) => {
                                 console.log('Selected Option cat:', val);
                                 setSelectedCat(val)
                             }}
                             data={data}
-                            
-                
                             save="key"
                         />
-                   
-                        </View>
-
-                    <Text style={styles.title1}>Sort by:</Text>
-                        <View style={{ flex: 1 }}>
-                            <SelectList
-
-                                defaultText='Select annnnn option...'
-                                dropdownStyles={{
-                                    backgroundColor: "white",
-                                    position: "absolute",
-                                    top: 40,
-                                    height: 150,
-                                    width: "90%",
-                                    zIndex: 999,
-                                }}
-
-
-
+                    </View>
+                    <Text>Sort by:</Text>
+                    <View style={{ flex: 1 }}>
+                        <SelectList
+                            defaultText='Select option...'
+                            dropdownStyles={{
+                                backgroundColor: "white",
+                                position: "absolute",
+                                top: 40,
+                                height: 150,
+                                width: "90%",
+                                zIndex: 999,
+                            }}
                             setSelected={(val) => setSelectedSor(val)}
                             data={data1}
-
                             save="key"
-                            />
-                        </View>
-
+                        />
+                    </View>
                 </View>
-               
             </View>
-
-
-
             <View style={{ backgroundColor: '#E5E5E5', height: '100%' }}>
                 <View style={{ padding: 20 }}>
                     <FlatList
@@ -287,7 +223,6 @@ const SearchItem = () => {
                 </View>
             </View>
         </View>
-
     )
 }
 
@@ -318,19 +253,14 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 0
     },
     title: {
-        //backgroundColor: '#4F44D0',
         fontSize: 20,
         fontWeight: 'bold',
-        //color: 'white',
         margin: 5,
         marginLeft: 8
     },
-
     label: {
-        //backgroundColor: '#4F44D0',
         fontSize: 15,
-        fontWeight: 'bold',
-        //color: 'white',
+        fontWeight: 'bold'
     },
 
     checkbox: {
@@ -339,7 +269,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         borderWidth: 2,
         borderColor: 'black',
-        marginRight: 10,
+        marginRight: 10
     },
     checkboxSale: {
         width: 16,
@@ -348,13 +278,12 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: 'black',
         marginRight: 10,
-        marginLeft: 50,
+        marginLeft: 120
     },
     checkboxChecked: {
         backgroundColor: 'green',
-        borderColor: 'green',
+        borderColor: 'green'
     },
-
     btn1: {
         backgroundColor: 'white',
         width: '35%',
@@ -431,8 +360,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         marginLeft: 5
     }
-
 }) 
-
 
 export default SearchItem;

@@ -32,6 +32,7 @@ export function Recommended(){
     const renderItem = ({ item }) => (
         <TouchableOpacity style={styles.item} onPress={() => {
             navigation.navigate('ItemInfo', {
+                id: item.ITEM_ID,
                 name: item.ITEM_NAME,
                 image: item.IMAGE,
                 price: item.IP_FOUR_WK_HIGHEST_PRICE,

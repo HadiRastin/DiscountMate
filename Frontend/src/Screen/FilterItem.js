@@ -47,31 +47,6 @@ const SearchItemFilter = () => {
         </TouchableOpacity>
     );
 
-   /* return (
-        <View>
-            <View>
-                <TouchableOpacity onPress={() => getItem()}>
-                    <View style={{ flexDirection: 'row' }}>
-                        <TextInput placeholder='Item name' style={styles.input_box} onChangeText={SetItemName} />
-                        <TouchableOpacity style={styles.btn} onPress={() => getItem()}>
-                            <Text style={styles.btn_text}>Find</Text>
-                        </TouchableOpacity>
-                    </View>
-                </TouchableOpacity>
-            </View>
-            <View style={{ backgroundColor: '#E5E5E5', height: '100%' }}>
-                <View style={{ padding: 20 }}>
-                    <FlatList
-                        initialNumToRender={7}
-                        data={itemList}
-                        renderItem={renderItem}
-                        showsVerticalScrollIndicator={true}
-                    />
-                </View>
-            </View>
-        </View>
-    ) */
-
      return (
         <View>
             <View>
@@ -119,39 +94,7 @@ const SearchItemFilter = () => {
                 </View>
             </View>
         </View>
-    ) 
-
-  /*  return (
-        <View style={styles.item}>
-            <View>
-            <Text style={styles.title}>Store</Text>
-
-            
-                <TouchableOpacity onPress={() => getItem()}>
-                    
-         
-                        <TouchableOpacity style={styles.btn} onPress={() => getItem()}>
-                            <Text style={styles.btn_text}>Woolworths</Text>
-                        </TouchableOpacity>
-                   
-                </TouchableOpacity>
-            </View>
-
-
-            <View style={{ backgroundColor: '#E5E5E5', height: '100%' }}>
-                <View style={{ padding: 20 }}>
-                    <FlatList
-                        initialNumToRender={7}
-                        data={itemList}
-                        renderItem={renderItem}
-                        showsVerticalScrollIndicator={true}
-                    />
-                </View>
-            </View>
-        </View>
-    )*/
-
-
+    )
 }
 
 const styles = StyleSheet.create({

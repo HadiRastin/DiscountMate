@@ -25,6 +25,7 @@ import Settings from './Screen/Settings';
 // Item screens
 import SearchItem from './Screen/SearchItem';
 import ItemInfo from './Screen/ItemInfo';
+import PriceHistory from './Screen/PriceHistory';
 
 // OCR screens
 import ScanReceipt from './Screen/ScanReceipt';
@@ -91,7 +92,7 @@ const Navigation = () => {
             {addToStack('Login', Login, null, false, false, false, false)}
             {addToStack('Main', Main, 'DiscountMate', true, true, true, true)}
             {addToStack('SearchItem', SearchItem, 'Search Items', true, false, true, true)}
-            {addToStack('ItemInfo', ItemInfo, 'Item Info', true, false, true, true)}
+            {addToStack('ItemInfo', ItemInfo, 'Item Info', true, false, true, false)}
             {addToStack('Register', Register, 'Register', true, false, false, false)}
             {addToStack('Register3', Register3, 'Register', true, false, false, false)}
             {addToStack('Register4', Register4, 'Register', true, false, false, false)}
@@ -102,6 +103,7 @@ const Navigation = () => {
             {addToStack('Scan', ScanReceipt, null, true, false, false, false)}
             {addToStack('Reset', ResetPwd, null, true, false, false, false)}
             {addToStack('ReceiptResult', ReceiptResult, 'Scan Result', true, false, false, false)}
+            {addToStack('PriceHistory', PriceHistory, 'Price History', true, false, true, false)}
         </Stack.Navigator>
     );
 }

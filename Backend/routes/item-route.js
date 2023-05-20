@@ -39,6 +39,9 @@ router.get('/search?', itemController.searchItems)
 //search filter request
 router.post('/searchFilter', itemController.searchItemFilter)
 
+//search history request
+router.post('/searchHistory', itemController.searchItemHistory)
+
 //search invoice request
 router.post('/searchInvoiceHistory', itemController.searchInvoiceHistory)
 

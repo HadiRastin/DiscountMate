@@ -108,7 +108,10 @@ exports.Login = async (req, res, next) => {
         const username = req.body.username;
         db.getConnection(async (err, connection) => {
             const search_query = mysql.format("Select USER_ID,USER_NAME,USER_MOBILE,USER_EMAIL,USER_PWD_HASH from USER_ENCRYPT where USER_NAME = ?", [username]);
-
+            if (!connection) {
+                console.log("Unable to communicate with MySQL server");
+                return;
+            }
             //query db
             connection.query(search_query, async (err, result) => {
                 connection.release()
@@ -120,18 +123,23 @@ exports.Login = async (req, res, next) => {
                 else {
                     bcrypt.compare(req.body.password, result[0].USER_PWD_HASH).then(match => {
                         if (match) {
+
                             // Generate two factor authentication code
-                            console.log("--> Generating OTP");
+                            // This code is working, a OTP is sent to the users email
+                            // However emails aren't checked for validity and the OTP currently isn't required to login.
+                            // Uncomment this section to enable sending OTP
+
+                            /*console.log("--> Generating OTP");
                             const otp = Math.floor(1000 + Math.random() * 9000)
-                            //Send the email to the user
                             const mailOption = {
                                 from: process.env.AUTH_EMAIL,
                                 to: result[0].USER_EMAIL,
                                 subject: "HERE'S YOUR ONE TIME PASSWORD",
                                 text: "Your one time password is " + otp.toString(),
                             }
-                            transporter.sendMail(mailOption);
+                            transporter.sendMail(mailOption);*/
 
+                            //If sending a result back to the client, navigate to the validation screen to handle entry.
                             //console.log("--> OTP Sent to Email, Awaiting verification");
                             //res.status(200).send("OTP sent successfully");
 
@@ -142,6 +150,7 @@ exports.Login = async (req, res, next) => {
                                 from: "+61333333333" //THIS HAS TO BE A PHONE NUMBER CREATED BY TWILIO
                             }).then(messages => console.log("--> OTP Sent, Awaiting verification"));
 
+                            //If sending a result back to the client, navigate to the validation screen to handle entry.
                             console.log("--> OTP Sent to SMS, Awaiting verification");*/
                             //res.status(200).send("OTP sent successfully");
 

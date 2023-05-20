@@ -56,6 +56,19 @@ exports.searchItemFilter = async (req, res, next) => {
     }
 }
 
+//searches for an item History price
+exports.searchItemHistory = async (req, res, next) => {
+    try {
+        //Search for item price history by the item id
+        const [itemHistory] = await Item.searchItemHistory(req.body.id);
+        res.status(200).json(itemHistory);
+    }
+    catch (err) {
+        if (!err.statusCode) { err.statusCode = 500; }
+        next(err);
+    }
+}
+
 //searches for an item by name, used in item model
 exports.searchInvoiceHistory = async (req, res, next) => {
     try {

@@ -1,10 +1,12 @@
 import { useRoute } from '@react-navigation/native';
 import React from 'react';
-import { SafeAreaView, Text, StyleSheet, View, Image } from 'react-native';
+import { SafeAreaView, Text, StyleSheet, View, Image, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const ItemInfo = () => {
+    const navigation = useNavigation();
     const route = useRoute();
-    const { name, image, price, discount, percent, catagory, company, description } = route.params;
+    const { id, name, image, price, discount, percent, catagory, company, description } = route.params;
 
     return (
         <SafeAreaView>
@@ -26,6 +28,11 @@ const ItemInfo = () => {
                         <Text style={styles.item_description}>{description ? description : "No description for this item."}</Text>
                     </View>
                 </View>
+            </View>
+            <View>
+                <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('PriceHistory', {id : id})}>
+                    <Text style={styles.btn_text}>Price History</Text>
+               </TouchableOpacity>
             </View>
         </SafeAreaView>
     )
@@ -74,6 +81,23 @@ const styles = StyleSheet.create({
     },
     item_catcom: {
         fontSize: 16
+    },
+    btn: {
+        backgroundColor: '#4F44D0',
+        width: '30%',
+        height: 35,
+        borderRadius: 0,
+        borderBottomLeftRadius: 0,
+        borderTopLeftRadius: 0,
+        marginTop: 30,
+        alignSelf: 'center'
+    },
+    btn_text: {
+        fontSize: 16,
+        color: 'white',
+        margin: 5,
+        textAlign: 'center',
+        verticalAlign: 'middle'
     }
 })
 

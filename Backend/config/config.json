@@ -1,8 +1,8 @@
 {
   "connectionLimit": 100,
-  "host": "34.129.54.95",
+  "host": "localhost",
   "port": "3306",
-  "user": "dcmdbuser",
+  "user": "discountmateuser",
   "database": "dcmdb",
-  "password": "dusit2022t3"
+  "password": "DMPassword$"
 }
