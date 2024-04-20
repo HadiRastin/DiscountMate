@@ -79,7 +79,36 @@ Additionally, the project aims to employ machine learning and data analysis tech
 History is obtained through user interaction methods such as item searches, checking off items on a shopping list to indicate a purchase, and scanning purchase receipts by utilizing optical character recognition (OCR) technology and extracting necessary data.
 
 ### 2.1 Product Perspective
-Describe the context and origin of the product being specified in this SRS. For example, state whether this product is a follow-on member of a product family, a replacement for certain existing systems, or a new, self-contained product. If the SRS defines a component of a larger system, relate the requirements of the larger system to the functionality of this software and identify interfaces between the two. A simple diagram that shows the major components of the overall system, subsystem interconnections, and external interfaces can be helpful.
+The DiscountMate project is a new, self-contained product designed to help consumers save money on their grocery shopping by providing them with reliable information on discounted items from various supermarket chains. It is not part of an existing product family, nor is it a replacement for any specific system. Instead, it serves as a unique platform that combines real-time data collection, machine learning, and user interaction to offer users significant savings and a more streamlined shopping experience.
+
+#### 2.1.1 Context and Origin
+DiscountMate emerged from the need to provide consumers with accurate and up-to-date information on discounted products across major supermarket chains. With the rising cost of living and the increased use of technology in everyday life, consumers are looking for smarter ways to shop. DiscountMate addresses this need by allowing users to compare prices, view promotions, and create personalized shopping lists that highlight the best deals.
+
+#### 2.1.2 System Overview
+DiscountMate is a standalone application that relies on several key components to deliver its functionality:
+
+##### Data Collection and Integration
+
+The application uses web-scraping techniques to collect data from various supermarket chains, ensuring that product information and pricing are kept up-to-date. Data is   then integrated into the system's database, allowing users to access this information for comparison and recommendation purposes.
+
+##### Machine Learning and Data Analysis:
+
+The system employs machine learning algorithms to identify patterns and predict future discount opportunities.
+This capability allows DiscountMate to provide personalized product recommendations based on user interactions, such as search history, shopping list modifications, and scanned purchase receipts (using Optical Character Recognition, or OCR).
+
+##### User Interaction and Personalization
+Users can create profiles, enabling them to save shopping lists and rate or comment on purchased items.
+The application provides various search and recommendation features to help users find discounted products quickly.
+The system also offers a mapping function to help users locate nearby stores and navigate to them.
+
+##### External Interfaces and Integration
+DiscountMate can interface with external applications such as mapping software to provide location-based services.
+It also integrates with user devices for features like scanning purchase receipts using OCR, which extracts data for further analysis.
+
+#### 2.1.3 Component Relationships and Interactions
+The following diagram illustrates the major components of the DiscountMate system and their interactions.
+
+**We need a figure here.**
 
 ### 2.2 Product Functions
 Summarize the major functions the product must perform or must let the user perform. Details will be provided in Section 3, so only a high level summary (such as a bullet list) is needed here. Organize the functions to make them understandable to any reader of the SRS. A picture of the major groups of related requirements and how they relate, such as a top level data flow diagram or object class diagram, is often effective.
