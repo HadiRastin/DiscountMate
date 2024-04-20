@@ -87,21 +87,21 @@ DiscountMate emerged from the need to provide consumers with accurate and up-to-
 #### 2.1.2 System Overview
 DiscountMate is a standalone application that relies on several key components to deliver its functionality:
 
-##### Data Collection and Integration
+##### 2.1.2.1 Data Collection and Integration
 
 The application uses web-scraping techniques to collect data from various supermarket chains, ensuring that product information and pricing are kept up-to-date. Data is   then integrated into the system's database, allowing users to access this information for comparison and recommendation purposes.
 
-##### Machine Learning and Data Analysis:
+##### 2.1.2.2  Machine Learning and Data Analysis:
 
 The system employs machine learning algorithms to identify patterns and predict future discount opportunities.
 This capability allows DiscountMate to provide personalized product recommendations based on user interactions, such as search history, shopping list modifications, and scanned purchase receipts (using Optical Character Recognition, or OCR).
 
-##### User Interaction and Personalization
+##### 2.1.2.3  User Interaction and Personalization
 Users can create profiles, enabling them to save shopping lists and rate or comment on purchased items.
 The application provides various search and recommendation features to help users find discounted products quickly.
 The system also offers a mapping function to help users locate nearby stores and navigate to them.
 
-##### External Interfaces and Integration
+##### 2.1.2.4 External Interfaces and Integration
 DiscountMate can interface with external applications such as mapping software to provide location-based services.
 It also integrates with user devices for features like scanning purchase receipts using OCR, which extracts data for further analysis.
 
@@ -111,7 +111,26 @@ The following diagram illustrates the major components of the DiscountMate syste
 **We need a figure here.**
 
 ### 2.2 Product Functions
-Summarize the major functions the product must perform or must let the user perform. Details will be provided in Section 3, so only a high level summary (such as a bullet list) is needed here. Organize the functions to make them understandable to any reader of the SRS. A picture of the major groups of related requirements and how they relate, such as a top level data flow diagram or object class diagram, is often effective.
+
+#### 2.2.1 Product Catalog and Pricing. 
+
+Users can browse a comprehensive catalogue of grocery items, view up-to-date product information, compare prices across different supermarket chains, and access current promotions.
+
+#### 2.2.2 Search and Recommendations.
+
+The system provides a search function for finding products by name, brand, price, or promotions, along with auto-suggestions. It also offers personalized product recommendations based on user interactions and machine learning algorithms.
+Shopping List Management: Users can create, modify, and manage multiple shopping lists, adding or removing items as needed. The system also allows users to compare prices and total costs across multiple stores.
+
+#### 2.2.3 User Profile and Authentication.
+
+The system requires users to create profiles with unique usernames and secure passwords, ensuring secure access to personalized features and shopping lists.
+#### 2.2.4 Feedback and Ratings.
+
+Users can rate and comment on purchased products, providing feedback that contributes to the recommendation engine and helps other users make informed decisions.
+
+#### 2.2.5 Location-Based Services.
+The system integrates mapping functionality, enabling users to locate and navigate to nearby supermarkets based on their real-time location.
+Customer Support and Interaction: The system offers customer support, allowing users to submit questions or report errors, ensuring a smooth and responsive user experience.
 
 ### 2.3 Product Constraints
 This subsection should provide a general description of any other items that will limit the developer’s options. These may include:  
